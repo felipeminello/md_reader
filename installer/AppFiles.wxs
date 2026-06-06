@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <DirectoryRef Id="INSTALLFOLDER">
+            <Component Id="cmpDC22F85144003CB2F05080B8CF79FC46" Guid="{B5B0A80D-F80C-4DCD-9206-D047CB7626AF}">
+                <File Id="fil230F9A11CF93D3D1A94FAA7A9D69118F" KeyPath="yes" Source="$(var.SourceDir)\flutter_windows.dll" />
+            </Component>
+            <Component Id="cmp6F59B03C6CF5252F36E7A7E44522DB53" Guid="{50939911-1E7F-4F6E-B99D-BF7681ABC853}">
+                <File Id="filFFA07ADF4E92B5250CCE02C5FE33ABC2" KeyPath="yes" Source="$(var.SourceDir)\md_reader.exe" />
+            </Component>
+            <Component Id="cmpB1AC150BF57171E60CE6AF36598B46A9" Guid="{E5C06F44-E117-4B19-AF3A-74E0BEF55C8B}">
+                <File Id="fil0239322223A8B4A59CB7F2C5D0F3A48C" KeyPath="yes" Source="$(var.SourceDir)\msvcp140.dll" />
+            </Component>
+            <Component Id="cmpF4BDAE8A068B7352141D703E6D5E677B" Guid="{0FFE9EC2-410D-4C67-8079-5A21FAD1BCF5}">
+                <File Id="fil5DEA999AA1C013B635C8FFBBE3F45E71" KeyPath="yes" Source="$(var.SourceDir)\vcruntime140.dll" />
+            </Component>
+            <Component Id="cmpC45B25996E14AF1484591C266BD5D670" Guid="{0E798CC3-4B08-402C-BFC5-D91FFFCC83B5}">
+                <File Id="fil50A820DB1DF105BC9A83DEF5E3A3A228" KeyPath="yes" Source="$(var.SourceDir)\vcruntime140_1.dll" />
+            </Component>
+            <Directory Id="dir76A8B56EDC1C4DD3CB4177F3704BC91E" Name="data">
+                <Component Id="cmpCF83D7D65587D05A151D1E25702E167F" Guid="{5889CD0D-ECCB-4BD8-A7A3-34D03CA9D7DE}">
+                    <File Id="filC8D6740BEA75F19BA5204B613C03D8A8" KeyPath="yes" Source="$(var.SourceDir)\data\app.so" />
+                </Component>
+                <Component Id="cmp0E0DCB81807E433F9DBCEB0D089B25B5" Guid="{E8748E33-C914-46E4-85DF-54631C6D0174}">
+                    <File Id="filFB2ED5EBC1081127146486443055DB0D" KeyPath="yes" Source="$(var.SourceDir)\data\icudtl.dat" />
+                </Component>
+                <Directory Id="dir4311D903D70E55164A03E9E9374AC9B0" Name="flutter_assets">
+                    <Component Id="cmp362972CB336FCADAB6FAD4E58ABB50C0" Guid="{CF83B419-3039-4CC4-9512-2ED86AF76DD9}">
+                        <File Id="filF34A97E96DF56DC7F9FA1F571A635270" KeyPath="yes" Source="$(var.SourceDir)\data\flutter_assets\AssetManifest.bin" />
+                    </Component>
+                    <Component Id="cmp75131C7E850BF8649161906B63E97A22" Guid="{FD90ABB5-FD6F-43F7-A60B-E6F67F32938B}">
+                        <File Id="filB615B988CD753762830B641F1427F799" KeyPath="yes" Source="$(var.SourceDir)\data\flutter_assets\AssetManifest.json" />
+                    </Component>
+                    <Component Id="cmp7A9B0136F23F84A4A09D4D0E28D8636B" Guid="{75254F24-0131-455C-BC34-64A4C9373B20}">
+                        <File Id="fil130B1805FDD25A50E354B5ADEEAC89F4" KeyPath="yes" Source="$(var.SourceDir)\data\flutter_assets\FontManifest.json" />
+                    </Component>
+                    <Component Id="cmpB22BCD9EFB853D38668ABE777CBF404C" Guid="{D9EE762D-E64D-4366-B757-92C0E040453B}">
+                        <File Id="fil95F1B70B711016C2E2A74411F6B41801" KeyPath="yes" Source="$(var.SourceDir)\data\flutter_assets\NOTICES.Z" />
+                    </Component>
+                    <Directory Id="dirE2A82CA30E4E1381D520C8FF40996653" Name="fonts">
+                        <Component Id="cmp9475753282C5250DEC233DF924257EDD" Guid="{7AEFC6AF-58E0-42CB-A6BA-3A17205872C0}">
+                            <File Id="fil95709FE501C331265C6CAAD00C2EA783" KeyPath="yes" Source="$(var.SourceDir)\data\flutter_assets\fonts\MaterialIcons-Regular.otf" />
+                        </Component>
+                    </Directory>
+                    <Directory Id="dirE3A5CD763BAF580FDB3696619F614D3F" Name="packages">
+                        <Directory Id="dir5FF583AEA68E18714B78C24666F2A264" Name="cupertino_icons">
+                            <Directory Id="dir3FA823D26185B1B6457D4DCE2A77C372" Name="assets">
+                                <Component Id="cmp995EB1479D86208A86E88112F9873FE0" Guid="{C9EA6110-E612-4335-871E-987E66978CE7}">
+                                    <File Id="fil7EC168CAE9512344DB7F6000958E43CF" KeyPath="yes" Source="$(var.SourceDir)\data\flutter_assets\packages\cupertino_icons\assets\CupertinoIcons.ttf" />
+                                </Component>
+                            </Directory>
+                        </Directory>
+                    </Directory>
+                    <Directory Id="dir5C01D37FD138B424B270832E735CB541" Name="shaders">
+                        <Component Id="cmpB754D63122F49081C0DAAE0074FBD9C1" Guid="{A7BB12F8-E8E8-4D30-90F7-2C8569D5B47F}">
+                            <File Id="filFA5374F8D6DDBC810796AB1AB906FB74" KeyPath="yes" Source="$(var.SourceDir)\data\flutter_assets\shaders\ink_sparkle.frag" />
+                        </Component>
+                    </Directory>
+                </Directory>
+            </Directory>
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="AppFiles">
+            <ComponentRef Id="cmpDC22F85144003CB2F05080B8CF79FC46" />
+            <ComponentRef Id="cmp6F59B03C6CF5252F36E7A7E44522DB53" />
+            <ComponentRef Id="cmpB1AC150BF57171E60CE6AF36598B46A9" />
+            <ComponentRef Id="cmpF4BDAE8A068B7352141D703E6D5E677B" />
+            <ComponentRef Id="cmpC45B25996E14AF1484591C266BD5D670" />
+            <ComponentRef Id="cmpCF83D7D65587D05A151D1E25702E167F" />
+            <ComponentRef Id="cmp0E0DCB81807E433F9DBCEB0D089B25B5" />
+            <ComponentRef Id="cmp362972CB336FCADAB6FAD4E58ABB50C0" />
+            <ComponentRef Id="cmp75131C7E850BF8649161906B63E97A22" />
+            <ComponentRef Id="cmp7A9B0136F23F84A4A09D4D0E28D8636B" />
+            <ComponentRef Id="cmpB22BCD9EFB853D38668ABE777CBF404C" />
+            <ComponentRef Id="cmp9475753282C5250DEC233DF924257EDD" />
+            <ComponentRef Id="cmp995EB1479D86208A86E88112F9873FE0" />
+            <ComponentRef Id="cmpB754D63122F49081C0DAAE0074FBD9C1" />
+        </ComponentGroup>
+    </Fragment>
+</Wix>

@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(flutter *)"
+      "PowerShell(flutter *)",
+      "Bash(flutter build *)",
+      "PowerShell($dir = \"build\\\\windows\\\\x64\\\\runner\\\\Release\"; $exe = Join-Path $dir \"md_reader.exe\"; $i = Get-Item $exe; Write-Output \\(\"EXE: {0}\" -f $i.FullName\\); Write-Output \\(\"Size: {0:N1} MB\" -f \\($i.Length/1MB\\)\\); Write-Output \"--- Bundle contents ---\"; Get-ChildItem $dir | Select-Object Mode, Length, Name | Format-Table -AutoSize)"
     ]
   }
 }

@@ -45,6 +45,12 @@ md_reader/
 │   │   ├── Runner.rc
 │   │   └── runner.exe.manifest
 │   └── CMakeLists.txt
+├── installer/                          # MSI packaging (WiX v3 toolset)
+│   ├── md_reader.wxs                   # WiX authoring: product, shortcut, upgrade rules
+│   ├── build_msi.ps1                   # Build script: flutter build -> heat -> candle -> light
+│   └── AppFiles.wxs                    # Payload harvested by heat (generated)
+├── dist/                               # Output MSI (generated): md_reader-<version>-x64.msi
+├── tools/                              # Local WiX v3 binaries (downloaded; not source)
 ├── analysis_options.yaml               # Lint rules (flutter_lints)
 ├── pubspec.yaml                        # Dependencies & project metadata
 ├── pubspec.lock                        # Resolved dependency versions
@@ -92,3 +98,25 @@ flutter analyze          # static analysis / lint
 flutter test             # run all tests
 dart format .            # format code
 ```
+
+## Building a Windows installer (MSI)
+
+The app is packaged into an MSI using the [WiX v3 toolset](https://github.com/wixtoolset/wix3).
+
+1. **One-time setup:** download `wix314-binaries.zip` from the
+   [WiX v3 releases](https://github.com/wixtoolset/wix3/releases) and extract it to
+   `tools\wix` (so that `tools\wix\candle.exe`, `heat.exe` and `light.exe` exist).
+2. **Build the installer:**
+
+   ```powershell
+   powershell -File installer\build_msi.ps1
+   ```
+
+   This builds the release, harvests the output with `heat`, and links
+   `dist\md_reader-1.0.0-x64.msi`.
+
+Install it by double-clicking the MSI: it requests admin rights, installs to
+*Program Files\MD Reader*, and creates a Start Menu shortcut. The installer is
+**not code-signed**, so Windows SmartScreen may show a warning on first run
+(choose *More info → Run anyway*). To uninstall, use *Apps & features* or
+*Add/Remove Programs*.
