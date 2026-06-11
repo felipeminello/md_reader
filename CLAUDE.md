@@ -35,7 +35,7 @@ dart format .                   # format code
 
 - **Whenever new files are created, update [README.md](README.md) with the current project structure** so it always reflects the files and directories that exist in the repo.
 - Dart SDK constraint is `>=3.4.4 <4.0.0` (`pubspec.yaml`). Flutter channel is `stable`.
-- Non-SDK dependencies: `flutter_bloc` (state management), `file_picker` (native file dialog), `flutter_markdown` (rendering), plus the original `cupertino_icons`. Add new packages via `flutter pub add <name>` so `pubspec.yaml` and `pubspec.lock` stay in sync.
+- Non-SDK dependencies: `flutter_bloc` (state management), `file_picker` (native file dialog), `flutter_markdown` (rendering), `flutter_mermaid` (pure-Dart Mermaid diagram rendering), `markdown` (AST types used by the custom element builder), plus the original `cupertino_icons`. Add new packages via `flutter pub add <name>` so `pubspec.yaml` and `pubspec.lock` stay in sync.
 - `flutter_markdown` is officially discontinued (recommended replacement: `flutter_markdown_plus`). It still works and is fine for now, but is the natural migration target if rendering needs grow.
 - Running on Windows requires **Developer Mode** enabled — Flutter needs symlink support to assemble the plugin symlinks for `file_picker`. Enable it once via Settings → *For developers*, or run `start ms-settings:developers`. Without it, `flutter run`/`flutter build windows` fail (but `flutter test` and `flutter analyze` still work).
 - [test/widget_test.dart](test/widget_test.dart) covers the `ReaderBloc` (driven by a fake repository) and the `ReaderPage` widget (empty state, document render, close). It no longer references the removed counter.

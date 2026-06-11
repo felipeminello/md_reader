@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_mermaid/flutter_mermaid.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:md_reader/main.dart';
@@ -154,6 +155,68 @@ void main() {
 
       expect(find.byType(MarkdownView), findsNothing);
       expect(find.text('Nenhum arquivo aberto'), findsOneWidget);
+    });
+  });
+
+  group('MarkdownView – Mermaid', () {
+    Future<void> pumpView(WidgetTester tester, String content) {
+      return tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MarkdownView(
+              document:
+                  MarkdownDocument(path: r'C:\docs\doc.md', content: content),
+            ),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('renders a ```mermaid block as a diagram', (tester) async {
+      await pumpView(tester, '''
+# Fluxo
+
+```mermaid
+graph TD
+  A[Início] --> B{Decisão}
+  B -->|Sim| C[OK]
+  B -->|Não| D[Cancelar]
+```
+''');
+      await tester.pump();
+
+      expect(find.byType(MermaidDiagram), findsOneWidget);
+      // The diagram replaces the raw source text.
+      expect(find.textContaining('graph TD'), findsNothing);
+    });
+
+    testWidgets('falls back to a code block for unsupported diagram types',
+        (tester) async {
+      await pumpView(tester, '''
+```mermaid
+classDiagram
+  Animal <|-- Duck
+```
+''');
+      await tester.pump();
+
+      expect(find.byType(MermaidDiagram), findsNothing);
+      expect(find.textContaining('classDiagram'), findsOneWidget);
+    });
+
+    testWidgets('leaves regular and inline code untouched', (tester) async {
+      await pumpView(tester, '''
+Use o comando `flutter run` para iniciar.
+
+```dart
+void main() {}
+```
+''');
+      await tester.pump();
+
+      expect(find.byType(MermaidDiagram), findsNothing);
+      expect(find.textContaining('flutter run'), findsOneWidget);
+      expect(find.textContaining('void main() {}'), findsOneWidget);
     });
   });
 }

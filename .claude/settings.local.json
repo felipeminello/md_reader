@@ -3,7 +3,12 @@
     "allow": [
       "PowerShell(flutter *)",
       "Bash(flutter build *)",
-      "PowerShell($dir = \"build\\\\windows\\\\x64\\\\runner\\\\Release\"; $exe = Join-Path $dir \"md_reader.exe\"; $i = Get-Item $exe; Write-Output \\(\"EXE: {0}\" -f $i.FullName\\); Write-Output \\(\"Size: {0:N1} MB\" -f \\($i.Length/1MB\\)\\); Write-Output \"--- Bundle contents ---\"; Get-ChildItem $dir | Select-Object Mode, Length, Name | Format-Table -AutoSize)"
+      "PowerShell($dir = \"build\\\\windows\\\\x64\\\\runner\\\\Release\"; $exe = Join-Path $dir \"md_reader.exe\"; $i = Get-Item $exe; Write-Output \\(\"EXE: {0}\" -f $i.FullName\\); Write-Output \\(\"Size: {0:N1} MB\" -f \\($i.Length/1MB\\)\\); Write-Output \"--- Bundle contents ---\"; Get-ChildItem $dir | Select-Object Mode, Length, Name | Format-Table -AutoSize)",
+      "PowerShell(\\(Invoke-RestMethod 'https://pub.dev/api/packages/webview_windows'\\).latest.version; \\(Invoke-RestMethod 'https://pub.dev/api/packages/webview_windows'\\).latest.published)",
+      "PowerShell($r = Invoke-RestMethod 'https://pub.dev/api/search?q=mermaid'; $r.packages | Select-Object -First 10 -ExpandProperty package)",
+      "PowerShell($p = Invoke-RestMethod 'https://pub.dev/api/packages/flutter_inappwebview'; $p.latest.version; $p.latest.published)",
+      "PowerShell(foreach \\($name in 'mermaid','flutter_mermaid','merman','flutter_smooth_markdown'\\) { $p = Invoke-RestMethod \"https://pub.dev/api/packages/$name\"; \"{0} | v{1} | {2} | {3}\" -f $name, $p.latest.version, $p.latest.published, $p.latest.pubspec.description })",
+      "PowerShell($s1 = Invoke-RestMethod 'https://pub.dev/api/packages/flutter_mermaid/score'; \"flutter_mermaid: points=$\\($s1.grantedPoints\\)/$\\($s1.maxPoints\\) likes=$\\($s1.likeCount\\) downloads=$\\($s1.downloadCount30Days\\) tags=$\\($s1.tags -join ','\\)\"; $s2 = Invoke-RestMethod 'https://pub.dev/api/packages/merman/score'; \"merman: points=$\\($s2.grantedPoints\\)/$\\($s2.maxPoints\\) likes=$\\($s2.likeCount\\) downloads=$\\($s2.downloadCount30Days\\) tags=$\\($s2.tags -join ','\\)\")"
     ]
   }
 }

@@ -9,6 +9,9 @@ go back to the empty state.
 - 📂 Select a Markdown file through the native Windows file picker
   (`.md`, `.markdown`, `.mdown`, `.mkd`, `.txt`).
 - 📖 Read and render the file as formatted, selectable, scrollable text.
+- 🧜 Render ```` ```mermaid ```` fenced code blocks as native diagrams
+  (flowchart, sequence, pie, gantt, timeline, kanban, radar and XY chart);
+  unsupported or malformed diagrams fall back to a plain code block.
 - ✖️ Close the open document to return to the empty state.
 
 ## Project Structure
@@ -29,6 +32,7 @@ md_reader/
 │           ├── reader_page.dart        # Main screen (BlocBuilder / BlocConsumer)
 │           └── widgets/
 │               ├── markdown_view.dart      # Renders a loaded document
+│               ├── mermaid_element_builder.dart # Renders ```mermaid blocks as diagrams
 │               └── reader_empty_view.dart  # Empty-state placeholder + open button
 ├── test/
 │   └── widget_test.dart                # ReaderBloc + ReaderPage tests
@@ -69,7 +73,9 @@ events and render state; the `ReaderBloc` mediates between the UI and the
 
 Key dependencies: [`flutter_bloc`](https://pub.dev/packages/flutter_bloc),
 [`file_picker`](https://pub.dev/packages/file_picker),
-[`flutter_markdown`](https://pub.dev/packages/flutter_markdown).
+[`flutter_markdown`](https://pub.dev/packages/flutter_markdown),
+[`flutter_mermaid`](https://pub.dev/packages/flutter_mermaid) (pure-Dart Mermaid
+rendering, no WebView).
 
 ## Getting Started
 
