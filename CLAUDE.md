@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-This is a Flutter **Markdown reader** for Windows desktop. The user picks a `.md` file through the native file picker; the app reads it and renders it on screen, with an action to close the document and return to an empty state. The original `flutter create` counter boilerplate has been replaced by the reader feature.
+This is a Flutter **Markdown reader** for desktop. The user picks a `.md` file through the native file picker; the app reads it and renders it on screen, with an action to close the document and return to an empty state. The original `flutter create` counter boilerplate has been replaced by the reader feature.
 
-Only the **Windows desktop** platform is configured (see [windows/](windows/) and `.metadata`). There are no `android/`, `ios/`, `web/`, `linux/`, or `macos/` runner directories, so `flutter run` / `flutter build` target Windows. Add platforms with `flutter create --platforms=<name> .` before targeting them.
+Only the **Windows** and **macOS** desktop platforms are configured (see [windows/](windows/), [macos/](macos/) and `.metadata`). There are no `android/`, `ios/`, `web/`, or `linux/` runner directories. Use `flutter run -d windows` / `flutter run -d macos` (or the matching `flutter build`) to target one. Add other platforms with `flutter create --platforms=<name> .` before targeting them. The macOS runner is sandboxed (`com.apple.security.app-sandbox`) with `com.apple.security.files.user-selected.read-only` added to both entitlements files so `file_picker` and `desktop_drop` can read user-chosen/dropped `.md` files.
 
 ## Architecture standard
 
@@ -23,6 +23,7 @@ This project **must follow the BLoC (Business Logic Component) pattern** for sta
 ```powershell
 flutter pub get                 # install/sync dependencies (run after editing pubspec.yaml)
 flutter run -d windows          # run the app on Windows desktop with hot reload
+flutter run -d macos            # run the app on macOS desktop with hot reload
 flutter analyze                 # static analysis / lint (rules from flutter_lints, see analysis_options.yaml)
 flutter test                    # run all tests
 flutter test test/widget_test.dart                              # run a single test file

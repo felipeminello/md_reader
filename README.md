@@ -1,13 +1,13 @@
 # MD Reader
 
-A simple Flutter application for reading Markdown files on the **Windows desktop**.
+A simple Flutter application for reading Markdown files on **Windows and macOS desktop**.
 Pick a `.md` file from your system, view it rendered on screen, and close it to
 go back to the empty state.
 
 ## Features
 
-- 📂 Select a Markdown file through the native Windows file picker, or drag
-  and drop one onto the empty-state screen
+- 📂 Select a Markdown file through the native file picker, or drag and drop
+  one onto the empty-state screen
   (`.md`, `.markdown`, `.mdown`, `.mkd`, `.txt`).
 - 📖 Read and render the file as formatted, selectable, scrollable text.
 - 🧜 Render ```` ```mermaid ```` fenced code blocks as native diagrams
@@ -37,7 +37,7 @@ md_reader/
 │               └── reader_empty_view.dart  # Empty-state placeholder, open button + drag-and-drop target
 ├── test/
 │   └── widget_test.dart                # ReaderBloc + ReaderPage tests
-├── windows/                            # Windows desktop runner (only configured platform)
+├── windows/                            # Windows desktop runner
 │   ├── flutter/                        # Flutter build glue (generated registrant, CMake)
 │   ├── runner/                         # Native C++ runner
 │   │   ├── resources/
@@ -50,6 +50,20 @@ md_reader/
 │   │   ├── Runner.rc
 │   │   └── runner.exe.manifest
 │   └── CMakeLists.txt
+├── macos/                              # macOS desktop runner
+│   ├── Flutter/                        # Flutter build glue (generated plugin registrant, xcconfigs)
+│   ├── Runner/                         # Native Swift/AppKit runner
+│   │   ├── AppDelegate.swift
+│   │   ├── MainFlutterWindow.swift
+│   │   ├── Base.lproj/MainMenu.xib
+│   │   ├── Assets.xcassets/AppIcon.appiconset/
+│   │   ├── Configs/                    # AppInfo / Debug / Release / Warnings xcconfigs
+│   │   ├── Info.plist
+│   │   ├── DebugProfile.entitlements   # App Sandbox + user-selected file read access
+│   │   └── Release.entitlements        # App Sandbox + user-selected file read access
+│   ├── RunnerTests/RunnerTests.swift
+│   ├── Runner.xcodeproj/
+│   └── Runner.xcworkspace/
 ├── installer/                          # MSI packaging (WiX v3 toolset)
 │   ├── md_reader.wxs                   # WiX authoring: product, shortcut, upgrade rules
 │   ├── build_msi.ps1                   # Build script: flutter build -> heat -> candle -> light
@@ -84,25 +98,31 @@ rendering, no WebView).
 
 ### Prerequisites
 
-- Flutter (stable channel) with the Windows desktop toolchain.
-- **Windows Developer Mode must be enabled** — Flutter needs symlink support to
-  build apps that use plugins (such as `file_picker`). Enable it once via
+- Flutter (stable channel) with the desktop toolchain for your platform.
+- **Windows:** Developer Mode must be enabled — Flutter needs symlink support
+  to build apps that use plugins (such as `file_picker`). Enable it once via
   *Settings → For developers*, or run:
 
   ```powershell
   start ms-settings:developers
   ```
+- **macOS:** Xcode must be installed. The `macos/` runner is sandboxed
+  (`com.apple.security.app-sandbox`); the `com.apple.security.files.user-selected.read-only`
+  entitlement is already granted in both `DebugProfile.entitlements` and
+  `Release.entitlements` so `file_picker` / `desktop_drop` can read
+  user-chosen or dropped files.
 
 ### Run
 
-```powershell
+```shell
 flutter pub get          # install dependencies
-flutter run -d windows   # launch the app
+flutter run -d windows   # launch the app on Windows
+flutter run -d macos     # launch the app on macOS
 ```
 
 ### Develop
 
-```powershell
+```shell
 flutter analyze          # static analysis / lint
 flutter test             # run all tests
 dart format .            # format code
