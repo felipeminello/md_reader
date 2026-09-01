@@ -4,6 +4,7 @@
 // real file system are never touched, and the widget layer is checked for the
 // empty/loaded/close behaviour.
 
+import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_mermaid/flutter_mermaid.dart';
@@ -35,6 +36,12 @@ class _FakeRepository implements MarkdownRepository {
   Future<MarkdownDocument> readDocument(String path) async {
     if (failOnRead) throw const MarkdownReadException('arquivo inacessível');
     return document ?? MarkdownDocument(path: path, content: '# Olá');
+  }
+
+  @override
+  bool isMarkdownPath(String path) {
+    final extension = path.split('.').last.toLowerCase();
+    return MarkdownRepository.allowedExtensions.contains(extension);
   }
 }
 
@@ -109,6 +116,33 @@ void main() {
 
       expect(bloc.state, isA<ReaderEmpty>());
     });
+
+    test('emits [Loading, Loaded] when a supported file is dropped', () {
+      final bloc = ReaderBloc(
+        _FakeRepository(
+          document: const MarkdownDocument(
+            path: r'C:\docs\notas.md',
+            content: '# Notas',
+          ),
+        ),
+      );
+
+      expectLater(
+        bloc.stream,
+        emitsInOrder([isA<ReaderLoading>(), isA<ReaderLoaded>()]),
+      );
+
+      bloc.add(const ReaderFileDropped(r'C:\docs\notas.md'));
+    });
+
+    test('emits a failure without reading when a dropped file is unsupported',
+        () async {
+      final bloc = ReaderBloc(_FakeRepository());
+
+      expectLater(bloc.stream, emits(isA<ReaderFailure>()));
+
+      bloc.add(const ReaderFileDropped(r'C:\docs\imagem.png'));
+    });
   });
 
   group('ReaderPage', () {
@@ -119,6 +153,8 @@ void main() {
       expect(find.text('Nenhum arquivo aberto'), findsOneWidget);
       // FilledButton.icon builds a private subtype, so match on the label text.
       expect(find.text('Selecionar arquivo'), findsOneWidget);
+      // The empty screen accepts files dropped from the OS file explorer.
+      expect(find.byType(DropTarget), findsOneWidget);
     });
 
     testWidgets('renders the document and closes it', (tester) async {

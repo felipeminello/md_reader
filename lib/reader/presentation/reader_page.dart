@@ -15,28 +15,65 @@ class ReaderPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: BlocBuilder<ReaderBloc, ReaderState>(
           builder: (context, state) {
-            final title = switch (state) {
-              ReaderLoaded(:final document) => document.fileName,
-              _ => 'Leitor de Markdown',
-            };
-            return Text(title);
+            if (state is! ReaderLoaded) {
+              return const Text('Leitor de Markdown');
+            }
+            final document = state.document;
+            final folder = _parentFolder(document.path);
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  document.fileName,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (folder != null)
+                  Text(
+                    folder,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            );
           },
         ),
         actions: [
-          // The close action only exists while a document is open.
           BlocBuilder<ReaderBloc, ReaderState>(
             builder: (context, state) {
               if (state is! ReaderLoaded) return const SizedBox.shrink();
-              return IconButton(
-                icon: const Icon(Icons.close),
-                tooltip: 'Fechar arquivo',
-                onPressed: () =>
-                    context.read<ReaderBloc>().add(const ReaderFileClosed()),
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Row(
+                  children: [
+                    IconButton.filledTonal(
+                      icon: const Icon(Icons.folder_open_outlined),
+                      tooltip: 'Abrir outro arquivo',
+                      onPressed: () => context
+                          .read<ReaderBloc>()
+                          .add(const ReaderFileOpened()),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      tooltip: 'Fechar arquivo',
+                      onPressed: () => context
+                          .read<ReaderBloc>()
+                          .add(const ReaderFileClosed()),
+                    ),
+                  ],
+                ),
               );
             },
           ),
@@ -47,28 +84,60 @@ class ReaderPage extends StatelessWidget {
           if (state is ReaderFailure) {
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
-              ..showSnackBar(SnackBar(content: Text(state.message)));
+              ..showSnackBar(
+                SnackBar(
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  content: Text(state.message),
+                ),
+              );
           }
         },
         builder: (context, state) {
           return switch (state) {
-            ReaderLoading() => const Center(child: CircularProgressIndicator()),
+            ReaderLoading() => const _LoadingView(),
             ReaderLoaded(:final document) => MarkdownView(document: document),
             ReaderEmpty() || ReaderFailure() => const ReaderEmptyView(),
           };
         },
       ),
-      // Once a document is open, this lets the user swap it for another one.
-      floatingActionButton: BlocBuilder<ReaderBloc, ReaderState>(
-        builder: (context, state) {
-          if (state is! ReaderLoaded) return const SizedBox.shrink();
-          return FloatingActionButton.extended(
-            onPressed: () =>
-                context.read<ReaderBloc>().add(const ReaderFileOpened()),
-            icon: const Icon(Icons.folder_open),
-            label: const Text('Abrir outro'),
-          );
-        },
+    );
+  }
+
+  /// The directory containing [path], for the small caption under the file
+  /// name. Handles both Windows (`\`) and POSIX (`/`) separators.
+  String? _parentFolder(String path) {
+    final segments = path.replaceAll('\\', '/').split('/');
+    if (segments.length < 2) return null;
+    return segments.sublist(0, segments.length - 1).join(' / ');
+  }
+}
+
+class _LoadingView extends StatelessWidget {
+  const _LoadingView();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(
+            width: 32,
+            height: 32,
+            child: CircularProgressIndicator(strokeWidth: 3),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Carregando documento...',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
       ),
     );
   }

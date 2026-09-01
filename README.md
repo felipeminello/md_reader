@@ -6,7 +6,8 @@ go back to the empty state.
 
 ## Features
 
-- 📂 Select a Markdown file through the native Windows file picker
+- 📂 Select a Markdown file through the native Windows file picker, or drag
+  and drop one onto the empty-state screen
   (`.md`, `.markdown`, `.mdown`, `.mkd`, `.txt`).
 - 📖 Read and render the file as formatted, selectable, scrollable text.
 - 🧜 Render ```` ```mermaid ```` fenced code blocks as native diagrams
@@ -26,14 +27,14 @@ md_reader/
 │       │   └── markdown_repository.dart# Data source: pick + read files
 │       ├── bloc/
 │       │   ├── reader_bloc.dart        # ReaderBloc (business logic)
-│       │   ├── reader_event.dart       # Events: open file / close file
+│       │   ├── reader_event.dart       # Events: open file / close file / drop file
 │       │   └── reader_state.dart       # States: empty / loading / loaded / failure
 │       └── presentation/
 │           ├── reader_page.dart        # Main screen (BlocBuilder / BlocConsumer)
 │           └── widgets/
 │               ├── markdown_view.dart      # Renders a loaded document
 │               ├── mermaid_element_builder.dart # Renders ```mermaid blocks as diagrams
-│               └── reader_empty_view.dart  # Empty-state placeholder + open button
+│               └── reader_empty_view.dart  # Empty-state placeholder, open button + drag-and-drop target
 ├── test/
 │   └── widget_test.dart                # ReaderBloc + ReaderPage tests
 ├── windows/                            # Windows desktop runner (only configured platform)
@@ -73,6 +74,8 @@ events and render state; the `ReaderBloc` mediates between the UI and the
 
 Key dependencies: [`flutter_bloc`](https://pub.dev/packages/flutter_bloc),
 [`file_picker`](https://pub.dev/packages/file_picker),
+[`desktop_drop`](https://pub.dev/packages/desktop_drop) (drag-and-drop file
+target),
 [`flutter_markdown`](https://pub.dev/packages/flutter_markdown),
 [`flutter_mermaid`](https://pub.dev/packages/flutter_mermaid) (pure-Dart Mermaid
 rendering, no WebView).

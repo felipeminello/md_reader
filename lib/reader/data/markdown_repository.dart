@@ -21,16 +21,27 @@ class MarkdownReadException implements Exception {
 class MarkdownRepository {
   const MarkdownRepository();
 
+  /// File extensions (without the leading dot) accepted by the picker and by
+  /// dropped files, kept in one place so both stay in sync.
+  static const allowedExtensions = ['md', 'markdown', 'mdown', 'mkd', 'txt'];
+
   /// Opens the native file picker so the user can choose a Markdown file.
   ///
   /// Returns the selected absolute path, or `null` if the user cancelled.
   Future<String?> pickMarkdownPath() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFile(
       dialogTitle: 'Selecionar arquivo Markdown',
       type: FileType.custom,
-      allowedExtensions: const ['md', 'markdown', 'mdown', 'mkd', 'txt'],
+      allowedExtensions: allowedExtensions,
     );
-    return result?.files.single.path;
+    return result?.path;
+  }
+
+  /// Whether [path]'s extension is one accepted by the reader, so a dropped
+  /// file can be validated before it is read.
+  bool isMarkdownPath(String path) {
+    final extension = path.split('.').last.toLowerCase();
+    return allowedExtensions.contains(extension);
   }
 
   /// Reads the file at [path] from disk and wraps it in a [MarkdownDocument].

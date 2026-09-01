@@ -13,6 +13,7 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
   ReaderBloc(this._repository) : super(const ReaderEmpty()) {
     on<ReaderFileOpened>(_onFileOpened);
     on<ReaderFileClosed>(_onFileClosed);
+    on<ReaderFileDropped>(_onFileDropped);
   }
 
   final MarkdownRepository _repository;
@@ -28,6 +29,34 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
       return;
     }
 
+    await _loadDocument(path, emit);
+  }
+
+  Future<void> _onFileDropped(
+    ReaderFileDropped event,
+    Emitter<ReaderState> emit,
+  ) async {
+    if (!_repository.isMarkdownPath(event.path)) {
+      emit(
+        const ReaderFailure(
+          'Tipo de arquivo não suportado. Solte um arquivo .md, .markdown, '
+          '.mdown, .mkd ou .txt.',
+        ),
+      );
+      return;
+    }
+
+    await _loadDocument(event.path, emit);
+  }
+
+  void _onFileClosed(
+    ReaderFileClosed event,
+    Emitter<ReaderState> emit,
+  ) {
+    emit(const ReaderEmpty());
+  }
+
+  Future<void> _loadDocument(String path, Emitter<ReaderState> emit) async {
     emit(const ReaderLoading());
     try {
       final document = await _repository.readDocument(path);
@@ -37,12 +66,5 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
     } catch (e) {
       emit(ReaderFailure('Não foi possível abrir o arquivo. $e'));
     }
-  }
-
-  void _onFileClosed(
-    ReaderFileClosed event,
-    Emitter<ReaderState> emit,
-  ) {
-    emit(const ReaderEmpty());
   }
 }

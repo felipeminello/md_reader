@@ -15,3 +15,11 @@ class ReaderFileOpened extends ReaderEvent {
 class ReaderFileClosed extends ReaderEvent {
   const ReaderFileClosed();
 }
+
+/// The user dropped a file onto the reader (drag-and-drop). Reads and
+/// displays it, same as [ReaderFileOpened], if its extension is supported.
+class ReaderFileDropped extends ReaderEvent {
+  const ReaderFileDropped(this.path);
+
+  final String path;
+}
