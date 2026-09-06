@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  WiX v3 authoring for the MD Reader MSI.
+  WiX v3 authoring for the MarkDown Reader MSI.
 
   The list of payload files is NOT hand-written here: it is harvested from the
   release build output into AppFiles.wxs by `heat` (see installer/build_msi.ps1).
@@ -9,33 +9,33 @@
 -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product Id="*"
-           Name="MD Reader"
+           Name="MarkDown Reader"
            Language="1033"
            Version="1.0.0.0"
-           Manufacturer="MD Reader"
+           Manufacturer="MarkDown Reader"
            UpgradeCode="7BBA07F3-D0E9-4597-8537-DA3E0F1FEB6B">
 
     <Package InstallerVersion="500"
              Compressed="yes"
              InstallScope="perMachine"
-             Description="MD Reader - a simple Markdown reader" />
+             Description="MarkDown Reader - a simple Markdown reader" />
 
     <!-- Cleanly replace any previously installed version. -->
-    <MajorUpgrade DowngradeErrorMessage="A newer version of MD Reader is already installed." />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of MarkDown Reader is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
     <!-- Use the app executable as the Add/Remove Programs icon. -->
     <Icon Id="AppIcon" SourceFile="$(var.SourceDir)\md_reader.exe" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon" />
 
-    <Feature Id="MainFeature" Title="MD Reader" Level="1">
+    <Feature Id="MainFeature" Title="MarkDown Reader" Level="1">
       <ComponentGroupRef Id="AppFiles" />
       <ComponentRef Id="ApplicationShortcut" />
     </Feature>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFiles64Folder">
-        <Directory Id="INSTALLFOLDER" Name="MD Reader" />
+        <Directory Id="INSTALLFOLDER" Name="MarkDown Reader" />
       </Directory>
       <Directory Id="ProgramMenuFolder" />
     </Directory>
@@ -44,12 +44,12 @@
     <DirectoryRef Id="ProgramMenuFolder">
       <Component Id="ApplicationShortcut" Guid="905135DB-404A-4C9C-928D-75E6F9CF7506">
         <Shortcut Id="AppStartMenuShortcut"
-                  Name="MD Reader"
+                  Name="MarkDown Reader"
                   Description="A simple Markdown reader"
                   Target="[INSTALLFOLDER]md_reader.exe"
                   WorkingDirectory="INSTALLFOLDER" />
         <RegistryValue Root="HKCU"
-                       Key="Software\MD Reader"
+                       Key="Software\MarkDown Reader"
                        Name="installed"
                        Type="integer"
                        Value="1"
