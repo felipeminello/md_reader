@@ -62,7 +62,8 @@ md_reader/
 │   │   └── Release.entitlements        # App Sandbox + user-selected file read access
 │   ├── RunnerTests/RunnerTests.swift
 │   ├── Runner.xcodeproj/
-│   └── Runner.xcworkspace/
+│   ├── Runner.xcworkspace/
+│   └── ExportOptions.plist             # `xcodebuild -exportArchive` config for App Store uploads
 ├── installer/                          # MSI packaging (WiX v3 toolset)
 │   ├── md_reader.wxs                   # WiX authoring: product, shortcut, upgrade rules
 │   ├── build_msi.ps1                   # Build script: flutter build -> heat -> candle -> light

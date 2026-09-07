@@ -21,9 +21,16 @@ class MermaidElementBuilder extends MarkdownElementBuilder {
     final code = element.textContent;
     if (!_canRender(code)) return null;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
+    // MermaidDiagram lays out diagrams like sequence charts at a width
+    // driven purely by their content (participant count, label lengths),
+    // ignoring the space it is actually given. FittedBox scales that
+    // natural-size render down to fit the available width instead of
+    // letting it overflow the reading column.
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.topLeft,
         child: MermaidDiagram(code: code),
       ),
     );
