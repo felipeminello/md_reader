@@ -7,8 +7,7 @@ go back to the empty state.
 ## Features
 
 - 📂 Select a Markdown file through the native file picker, or drag and drop
-  one onto the empty-state screen
-  (`.md`, `.markdown`, `.mdown`, `.mkd`, `.txt`).
+  one onto the empty-state screen (`.md` only).
 - 📖 Read and render the file as formatted, selectable, scrollable text.
 - 🧜 Render ```` ```mermaid ```` fenced code blocks as native diagrams
   (flowchart, sequence, pie, gantt, timeline, kanban, radar and XY chart);

@@ -23,7 +23,7 @@ class MarkdownRepository {
 
   /// File extensions (without the leading dot) accepted by the picker and by
   /// dropped files, kept in one place so both stay in sync.
-  static const allowedExtensions = ['md', 'markdown', 'mdown', 'mkd', 'txt'];
+  static const allowedExtensions = ['md'];
 
   /// Opens the native file picker so the user can choose a Markdown file.
   ///
