@@ -8,6 +8,9 @@ go back to the empty state.
 
 - 📂 Select a Markdown file through the native file picker, or drag and drop
   one onto the empty-state screen (`.md` only).
+- 🍎 **macOS:** open a `.md` straight from Finder — double-click it or use
+  *Abrir com → MarkDown Reader* (right-click). Works whether the app is closed
+  or already running.
 - 📖 Read and render the file as formatted, selectable, scrollable text.
 - 🧜 Render ```` ```mermaid ```` fenced code blocks as native diagrams
   (flowchart, sequence, pie, gantt, timeline, kanban, radar and XY chart);
@@ -23,10 +26,11 @@ md_reader/
 │   └── reader/                         # Markdown reader feature (BLoC pattern)
 │       ├── data/
 │       │   ├── markdown_document.dart  # MarkdownDocument model
-│       │   └── markdown_repository.dart# Data source: pick + read files
+│       │   ├── markdown_repository.dart# Data source: pick + read files
+│       │   └── system_file_opener.dart # Files handed over by the OS (macOS "Abrir com")
 │       ├── bloc/
 │       │   ├── reader_bloc.dart        # ReaderBloc (business logic)
-│       │   ├── reader_event.dart       # Events: open file / close file / drop file
+│       │   ├── reader_event.dart       # Events: open / close / drop / opened by the OS
 │       │   └── reader_state.dart       # States: empty / loading / loaded / failure
 │       └── presentation/
 │           ├── reader_page.dart        # Main screen (BlocBuilder / BlocConsumer)
@@ -52,12 +56,12 @@ md_reader/
 ├── macos/                              # macOS desktop runner
 │   ├── Flutter/                        # Flutter build glue (generated plugin registrant, xcconfigs)
 │   ├── Runner/                         # Native Swift/AppKit runner
-│   │   ├── AppDelegate.swift
-│   │   ├── MainFlutterWindow.swift
+│   │   ├── AppDelegate.swift           # Receives files opened from Finder, forwards them to Flutter
+│   │   ├── MainFlutterWindow.swift     # Builds the engine and wires the file-open channel
 │   │   ├── Base.lproj/MainMenu.xib
 │   │   ├── Assets.xcassets/AppIcon.appiconset/
 │   │   ├── Configs/                    # AppInfo / Debug / Release / Warnings xcconfigs
-│   │   ├── Info.plist
+│   │   ├── Info.plist                  # Bundle config + `.md` document type (Open With)
 │   │   ├── DebugProfile.entitlements   # App Sandbox + user-selected file read access
 │   │   └── Release.entitlements        # App Sandbox + user-selected file read access
 │   ├── RunnerTests/RunnerTests.swift
@@ -86,6 +90,24 @@ State is managed with the **BLoC pattern** (`flutter_bloc`). Widgets only dispat
 events and render state; the `ReaderBloc` mediates between the UI and the
 `MarkdownRepository`. Layering: `presentation` → `bloc` → `data`.
 
+### Opening files from Finder (macOS)
+
+`macos/Runner/Info.plist` declares the `net.daringfireball.markdown` type
+(extension `.md`) under `CFBundleDocumentTypes`, with `LSHandlerRank` set to
+`Alternate`: the app shows up under Finder's *Abrir com* without stealing the
+default handler. To make it the default, use *Get Info → Open with → Change All*
+on any `.md` file.
+
+The document then travels: `AppDelegate` (`application(_:open:)`) →
+`md_reader/system_file_open` method channel → `SystemFileOpener` →
+`ReaderSystemFileOpened` event → `ReaderBloc`. A file that arrives before the
+Flutter engine is ready (cold launch) is buffered natively and handed over when
+Dart asks for it with `getInitialFile`; later ones are pushed through `openFile`.
+
+macOS only registers the document type once LaunchServices has seen the bundle —
+that happens when the app is installed in `/Applications` or launched at least
+once from its build folder.
+
 Key dependencies: [`flutter_bloc`](https://pub.dev/packages/flutter_bloc),
 [`file_picker`](https://pub.dev/packages/file_picker),
 [`desktop_drop`](https://pub.dev/packages/desktop_drop) (drag-and-drop file
@@ -110,7 +132,9 @@ rendering, no WebView).
   (`com.apple.security.app-sandbox`); the `com.apple.security.files.user-selected.read-only`
   entitlement is already granted in both `DebugProfile.entitlements` and
   `Release.entitlements` so `file_picker` / `desktop_drop` can read
-  user-chosen or dropped files.
+  user-chosen or dropped files. The same entitlement covers files handed over
+  by Finder, since LaunchServices grants the app access to the document it was
+  asked to open.
 
 ### Run
 

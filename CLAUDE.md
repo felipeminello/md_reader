@@ -7,6 +7,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a Flutter **Markdown reader** for desktop. The user picks a `.md` file through the native file picker; the app reads it and renders it on screen, with an action to close the document and return to an empty state. The original `flutter create` counter boilerplate has been replaced by the reader feature.
 
 Only the **Windows** and **macOS** desktop platforms are configured (see [windows/](windows/), [macos/](macos/) and `.metadata`). There are no `android/`, `ios/`, `web/`, or `linux/` runner directories. Use `flutter run -d windows` / `flutter run -d macos` (or the matching `flutter build`) to target one. Add other platforms with `flutter create --platforms=<name> .` before targeting them. The macOS runner is sandboxed (`com.apple.security.app-sandbox`) with `com.apple.security.files.user-selected.read-only` added to both entitlements files so `file_picker` and `desktop_drop` can read user-chosen/dropped `.md` files.
+The macOS `Info.plist` also declares `.md` as a document type
+(`CFBundleDocumentTypes` + an imported `net.daringfireball.markdown` UTI,
+`LSHandlerRank` = `Alternate`), so the app appears in Finder's *Abrir com*.
+Files opened that way reach Dart through `AppDelegate` → the
+`md_reader/system_file_open` method channel → `SystemFileOpener` (data layer) →
+the `ReaderSystemFileOpened` event. Launch files are buffered natively until
+Dart calls `getInitialFile`.
 
 ## Architecture standard
 

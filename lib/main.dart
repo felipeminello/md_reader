@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'reader/bloc/reader_bloc.dart';
 import 'reader/data/markdown_repository.dart';
+import 'reader/data/system_file_opener.dart';
 import 'reader/presentation/reader_page.dart';
 
 void main() {
@@ -25,7 +26,12 @@ class MyApp extends StatelessWidget {
       home: RepositoryProvider(
         create: (_) => const MarkdownRepository(),
         child: BlocProvider(
-          create: (context) => ReaderBloc(context.read<MarkdownRepository>()),
+          // The opener lets the OS (Finder's "Abrir com" on macOS) push files
+          // into the Bloc, alongside the picker and drag-and-drop.
+          create: (context) => ReaderBloc(
+            context.read<MarkdownRepository>(),
+            systemFileOpener: SystemFileOpener(),
+          ),
           child: const ReaderPage(),
         ),
       ),

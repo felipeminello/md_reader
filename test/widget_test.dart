@@ -6,6 +6,7 @@
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_mermaid/flutter_mermaid.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +17,7 @@ import 'package:md_reader/reader/bloc/reader_event.dart';
 import 'package:md_reader/reader/bloc/reader_state.dart';
 import 'package:md_reader/reader/data/markdown_document.dart';
 import 'package:md_reader/reader/data/markdown_repository.dart';
+import 'package:md_reader/reader/data/system_file_opener.dart';
 import 'package:md_reader/reader/presentation/reader_page.dart';
 import 'package:md_reader/reader/presentation/widgets/markdown_view.dart';
 
@@ -45,7 +47,55 @@ class _FakeRepository implements MarkdownRepository {
   }
 }
 
+/// Stands in for the macOS `AppDelegate`: answers `getInitialFile` and can
+/// push `openFile` calls as if Finder had handed the app a document.
+class _FakeOpenChannel {
+  _FakeOpenChannel({this.initialFile});
+
+  final String? initialFile;
+
+  final channel = const MethodChannel(SystemFileOpener.channelName);
+
+  /// Installs the fake native side for the duration of the test.
+  void install() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      return call.method == 'getInitialFile' ? initialFile : null;
+    });
+  }
+
+  /// Simulates macOS opening a file while the app is already running.
+  Future<void> sendOpenFile(String path) async {
+    ServicesBinding.instance.channelBuffers.push(
+      SystemFileOpener.channelName,
+      const StandardMethodCodec()
+          .encodeMethodCall(MethodCall('openFile', path)),
+      (_) {},
+    );
+    // Let the buffered message reach the handler.
+    await Future<void>.delayed(Duration.zero);
+  }
+}
+
+/// A [SystemFileOpener] backed by a fake native side that reports
+/// [initialFile] as the launch document.
+SystemFileOpener _fakeOpener({required String? initialFile}) {
+  final fake = _FakeOpenChannel(initialFile: initialFile)..install();
+  return SystemFileOpener(channel: fake.channel);
+}
+
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  // Keep a fake native side from leaking into the next test.
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel(SystemFileOpener.channelName),
+      null,
+    );
+  });
+
   group('ReaderBloc', () {
     test('starts in the empty state', () {
       final bloc = ReaderBloc(_FakeRepository());
@@ -142,6 +192,71 @@ void main() {
       expectLater(bloc.stream, emits(isA<ReaderFailure>()));
 
       bloc.add(const ReaderFileDropped(r'C:\docs\imagem.png'));
+    });
+
+    test('opens the file the OS launched the app with', () {
+      final bloc = ReaderBloc(
+        _FakeRepository(
+          document: const MarkdownDocument(
+            path: '/Users/ana/notas.md',
+            content: '# Notas',
+          ),
+        ),
+        systemFileOpener: _fakeOpener(initialFile: '/Users/ana/notas.md'),
+      );
+      addTearDown(bloc.close);
+
+      expectLater(
+        bloc.stream,
+        emitsInOrder([isA<ReaderLoading>(), isA<ReaderLoaded>()]),
+      );
+    });
+
+    test('opens files the OS sends while the app is running', () async {
+      // Installed with no launch file, so only the pushed one is read.
+      final channel = _FakeOpenChannel()..install();
+      final bloc = ReaderBloc(
+        _FakeRepository(
+          document: const MarkdownDocument(
+            path: '/Users/ana/guia.md',
+            content: '# Guia',
+          ),
+        ),
+        systemFileOpener: SystemFileOpener(channel: channel.channel),
+      );
+      addTearDown(bloc.close);
+
+      // Let `start()` resolve so the handler is registered before we push.
+      await Future<void>.delayed(Duration.zero);
+
+      expectLater(
+        bloc.stream,
+        emitsInOrder([isA<ReaderLoading>(), isA<ReaderLoaded>()]),
+      );
+
+      await channel.sendOpenFile('/Users/ana/guia.md');
+    });
+
+    test('emits a failure when the OS sends an unsupported file', () {
+      final bloc = ReaderBloc(
+        _FakeRepository(),
+        systemFileOpener: _fakeOpener(initialFile: '/Users/ana/imagem.png'),
+      );
+      addTearDown(bloc.close);
+
+      expectLater(bloc.stream, emits(isA<ReaderFailure>()));
+    });
+
+    test('stays empty when the OS launched the app without a file', () async {
+      final bloc = ReaderBloc(
+        _FakeRepository(),
+        systemFileOpener: _fakeOpener(initialFile: null),
+      );
+      addTearDown(bloc.close);
+
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state, isA<ReaderEmpty>());
     });
   });
 
