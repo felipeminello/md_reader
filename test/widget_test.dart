@@ -371,6 +371,84 @@ void main() {}
     });
   });
 
+  group('MarkdownDocument.resolveImageUri', () {
+    Uri resolve(String documentPath, String source) =>
+        MarkdownDocument(path: documentPath, content: '')
+            .resolveImageUri(Uri.parse(source));
+
+    test('keeps remote and inline URIs untouched', () {
+      const doc = r'C:\docs\doc.md';
+      expect(resolve(doc, 'https://example.com/a.png'),
+          Uri.parse('https://example.com/a.png'));
+      expect(resolve(doc, 'data:image/png;base64,AAAA').scheme, 'data');
+    });
+
+    test('resolves relative paths against a Windows document folder', () {
+      final uri = resolve(r'C:\My Docs\notes\doc.md', 'img/foto%201.png');
+      expect(uri.toFilePath(windows: true), r'C:\My Docs\notes\img\foto 1.png');
+
+      final parent = resolve(r'C:\My Docs\notes\doc.md', '../logo.png');
+      expect(parent.toFilePath(windows: true), r'C:\My Docs\logo.png');
+    });
+
+    test('resolves relative paths against a POSIX document folder', () {
+      final uri = resolve('/Users/ana/notes/doc.md', './img/a.png');
+      expect(uri.toFilePath(windows: false), '/Users/ana/notes/img/a.png');
+    });
+
+    test('turns Windows absolute paths into file URIs', () {
+      final uri = resolve(r'C:\docs\doc.md', r'D:\imagens\a.png');
+      expect(uri.scheme, 'file');
+      expect(uri.toFilePath(windows: true), r'D:\imagens\a.png');
+    });
+  });
+
+  group('MarkdownView – images', () {
+    testWidgets('loads relative images from the document folder',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: MarkdownView(
+              document: MarkdownDocument(
+                path: r'C:\docs\doc.md',
+                content: '![Diagrama](img/diagrama.png)',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final image = tester.widget<Image>(find.byType(Image));
+      expect(image.image, isA<FileImage>());
+      expect(
+        (image.image as FileImage).file.path.replaceAll(r'\', '/'),
+        endsWith('docs/img/diagrama.png'),
+      );
+      expect(image.semanticLabel, 'Diagrama');
+    });
+
+    testWidgets('shows the alt text when an image cannot be loaded',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: MarkdownView(
+              document: MarkdownDocument(
+                path: r'C:\docs\doc.md',
+                content: '![Logo ausente](ftp://example.com/logo.png)',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(Image), findsNothing);
+      expect(find.text('Logo ausente'), findsOneWidget);
+      expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
+    });
+  });
+
   group('MarkdownView – selection', () {
     testWidgets('copying the whole document keeps line breaks', (tester) async {
       String? copied;

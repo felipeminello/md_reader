@@ -5,6 +5,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../data/markdown_document.dart';
 import 'line_break_selection_container.dart';
+import 'markdown_image.dart';
 import 'mermaid_element_builder.dart';
 
 /// The generic `'monospace'` family name Flutter accepts on Android is not a
@@ -20,7 +21,8 @@ String get _monospaceFontFamily => Platform.isWindows ? 'Consolas' : 'Menlo';
 
 /// Renders the contents of a [MarkdownDocument] as formatted, scrollable,
 /// freely selectable text filling the whole window. Fenced ```mermaid blocks
-/// are rendered as diagrams by [MermaidElementBuilder].
+/// are rendered as diagrams by [MermaidElementBuilder] and images by
+/// [MarkdownImage].
 class MarkdownView extends StatelessWidget {
   const MarkdownView({super.key, required this.document});
 
@@ -55,6 +57,14 @@ class MarkdownView extends StatelessWidget {
               // Stretch blocks to the full width, as the ListView did.
               fitContent: false,
               builders: {'code': MermaidElementBuilder()},
+              // Relative image paths are resolved against the document's
+              // folder rather than the process working directory.
+              sizedImageBuilder: (config) => MarkdownImage(
+                uri: document.resolveImageUri(config.uri),
+                alt: config.alt,
+                width: config.width,
+                height: config.height,
+              ),
               styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
                 p: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
                 h1: theme.textTheme.headlineLarge?.copyWith(

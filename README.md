@@ -15,6 +15,10 @@ go back to the empty state.
 - 🧜 Render ```` ```mermaid ```` fenced code blocks as native diagrams
   (flowchart, sequence, pie, gantt, timeline, kanban, radar and XY chart);
   unsupported or malformed diagrams fall back to a plain code block.
+- 🖼️ Display images (`![alt](src)`): remote `http`/`https` URLs, inline
+  `data:` URIs and local files — relative paths are resolved against the
+  folder of the open `.md`. PNG, JPEG, GIF, WebP, BMP and SVG are supported;
+  an image that fails to load shows its alt text instead.
 - ✖️ Close the open document to return to the empty state.
 
 ## Project Structure
@@ -36,7 +40,8 @@ md_reader/
 │           ├── reader_page.dart        # Main screen (BlocBuilder / BlocConsumer)
 │           └── widgets/
 │               ├── line_break_selection_container.dart # Keeps line breaks when copying a selection
-│               ├── markdown_view.dart      # Renders a loaded document
+│               ├── markdown_image.dart     # Renders Markdown images (network, data URI, local file, SVG)
+               ├── markdown_view.dart      # Renders a loaded document
 │               ├── mermaid_element_builder.dart # Renders ```mermaid blocks as diagrams
 │               └── reader_empty_view.dart  # Empty-state placeholder, open button + drag-and-drop target
 ├── test/
@@ -63,8 +68,8 @@ md_reader/
 │   │   ├── Assets.xcassets/AppIcon.appiconset/
 │   │   ├── Configs/                    # AppInfo / Debug / Release / Warnings xcconfigs
 │   │   ├── Info.plist                  # Bundle config + `.md` document type (Open With)
-│   │   ├── DebugProfile.entitlements   # App Sandbox + user-selected file read access
-│   │   └── Release.entitlements        # App Sandbox + user-selected file read access
+│   │   ├── DebugProfile.entitlements   # App Sandbox + user-selected file read + outgoing network
+│   │   └── Release.entitlements        # App Sandbox + user-selected file read + outgoing network
 │   ├── RunnerTests/RunnerTests.swift
 │   ├── Runner.xcodeproj/
 │   ├── Runner.xcworkspace/
@@ -115,7 +120,8 @@ Key dependencies: [`flutter_bloc`](https://pub.dev/packages/flutter_bloc),
 target),
 [`flutter_markdown`](https://pub.dev/packages/flutter_markdown),
 [`flutter_mermaid`](https://pub.dev/packages/flutter_mermaid) (pure-Dart Mermaid
-rendering, no WebView).
+rendering, no WebView),
+[`flutter_svg`](https://pub.dev/packages/flutter_svg) (SVG images).
 
 ## Getting Started
 
@@ -136,6 +142,10 @@ rendering, no WebView).
   user-chosen or dropped files. The same entitlement covers files handed over
   by Finder, since LaunchServices grants the app access to the document it was
   asked to open.
+  `com.apple.security.network.client` is granted too, so images referenced by
+  `http`/`https` URLs can be downloaded. Because the sandbox only exposes the
+  chosen `.md` file itself, **local images next to it cannot be read on
+  macOS** (they show their alt text); remote and `data:` images work normally.
 
 ### Run
 

@@ -20,6 +20,28 @@ class MarkdownDocument {
     return segments.isEmpty ? path : segments.last;
   }
 
+  /// Resolves an image reference found in [content] to a loadable [Uri].
+  ///
+  /// Remote (`http`/`https`), inline (`data:`) and explicit `file:` URIs are
+  /// returned untouched. Windows absolute paths (`C:\img.png`, which [Uri]
+  /// parses as a one-letter scheme) become `file:` URIs, and everything else
+  /// is treated as a path relative to the folder containing this document,
+  /// the same way GitHub and other Markdown viewers resolve them.
+  Uri resolveImageUri(Uri source) {
+    if (source.scheme.length == 1) {
+      final drive = source.scheme.toUpperCase();
+      return Uri.file('$drive:${Uri.decodeComponent(source.path)}',
+          windows: true);
+    }
+    if (source.hasScheme) return source;
+    return Uri.file(path, windows: _isWindowsPath).resolveUri(source);
+  }
+
+  /// Whether [path] uses Windows conventions (drive letter or `\`), detected
+  /// from the path itself so resolution does not depend on the host platform.
+  bool get _isWindowsPath =>
+      path.contains('\\') || RegExp(r'^[a-zA-Z]:').hasMatch(path);
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
