@@ -370,4 +370,60 @@ void main() {}
       expect(find.textContaining('void main() {}'), findsOneWidget);
     });
   });
+
+  group('MarkdownView – selection', () {
+    testWidgets('copying the whole document keeps line breaks', (tester) async {
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied = (call.arguments as Map)['text'] as String;
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, null),
+      );
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: MarkdownView(
+              document: MarkdownDocument(
+                path: r'C:\docs\doc.md',
+                content: '# Título\n\n'
+                    'Primeiro parágrafo.\n\n'
+                    'Segundo parágrafo.\n\n'
+                    '- item a\n'
+                    '- item b\n\n'
+                    '```\nlinha 1\nlinha 2\n```\n',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Focus the selection area, then select all and copy via keyboard.
+      await tester.tap(find.text('Primeiro parágrafo.'));
+      await tester.pump();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyA);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+
+      expect(
+        copied,
+        'Título\n'
+        'Primeiro parágrafo.\n'
+        'Segundo parágrafo.\n'
+        '•\titem a\n'
+        '•\titem b\n'
+        'linha 1\nlinha 2',
+      );
+    });
+  });
 }

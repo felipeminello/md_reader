@@ -35,6 +35,7 @@ md_reader/
 │       └── presentation/
 │           ├── reader_page.dart        # Main screen (BlocBuilder / BlocConsumer)
 │           └── widgets/
+│               ├── line_break_selection_container.dart # Keeps line breaks when copying a selection
 │               ├── markdown_view.dart      # Renders a loaded document
 │               ├── mermaid_element_builder.dart # Renders ```mermaid blocks as diagrams
 │               └── reader_empty_view.dart  # Empty-state placeholder, open button + drag-and-drop target
