@@ -3,9 +3,8 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_mermaid/flutter_mermaid.dart'
     show MermaidDiagram, MermaidParser;
 import 'package:markdown/markdown.dart' as md;
-
-import 'flowchart/flowchart_diagram.dart';
-import 'flowchart/flowchart_parser.dart';
+import 'package:mermaid_flowchart/mermaid_flowchart.dart'
+    show FlowchartParser, MermaidFlowchart;
 
 /// Replaces ```mermaid fenced code blocks with natively rendered diagrams.
 ///
@@ -13,16 +12,10 @@ import 'flowchart/flowchart_parser.dart';
 /// keeps flutter_markdown's default rendering, so inline code spans and
 /// regular code blocks stay untouched.
 ///
-/// Flowcharts (`flowchart` / `graph`) go through the in-house renderer in
-/// `flowchart/`, which handles subgraphs, multi-line labels and orthogonal
-/// edges; the other diagram types are drawn by flutter_mermaid.
+/// Flowcharts (`flowchart` / `graph`) are drawn by the mermaid_flowchart
+/// package, which handles subgraphs, multi-line labels and orthogonal edges;
+/// the other diagram types are drawn by flutter_mermaid.
 class MermaidElementBuilder extends MarkdownElementBuilder {
-  static final RegExp _flowchartHeader = RegExp(
-    r'^\s*(?:graph|flowchart(?:-elk)?)(?=\s|;|$)',
-    caseSensitive: false,
-    multiLine: true,
-  );
-
   @override
   Widget? visitElementAfterWithContext(
     BuildContext context,
@@ -33,10 +26,10 @@ class MermaidElementBuilder extends MarkdownElementBuilder {
     if (element.attributes['class'] != 'language-mermaid') return null;
 
     final code = element.textContent;
-    if (_isFlowchart(code)) {
+    if (FlowchartParser.isFlowchart(code)) {
       final chart = const FlowchartParser().parse(code);
       if (chart == null) return null;
-      return _fitted(FlowchartDiagram(chart: chart));
+      return _fitted(MermaidFlowchart.chart(chart: chart));
     }
 
     if (!_canRender(code)) return null;
@@ -55,21 +48,6 @@ class MermaidElementBuilder extends MarkdownElementBuilder {
           child: diagram,
         ),
       );
-
-  /// Whether the first statement (after front matter, directives and
-  /// comments) declares a flowchart.
-  bool _isFlowchart(String code) {
-    final lines = code
-        .split('\n')
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty && !line.startsWith('%%'))
-        .toList();
-    if (lines.isNotEmpty && lines.first == '---') {
-      final close = lines.indexOf('---', 1);
-      if (close > 0) lines.removeRange(0, close + 1);
-    }
-    return lines.isNotEmpty && _flowchartHeader.hasMatch(lines.first);
-  }
 
   /// flutter_mermaid covers only part of the Mermaid grammar (sequence, pie,
   /// gantt, timeline, kanban, radar and XY chart besides flowcharts). Probe
