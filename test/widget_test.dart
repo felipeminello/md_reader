@@ -19,6 +19,7 @@ import 'package:md_reader/reader/data/markdown_document.dart';
 import 'package:md_reader/reader/data/markdown_repository.dart';
 import 'package:md_reader/reader/data/system_file_opener.dart';
 import 'package:md_reader/reader/presentation/reader_page.dart';
+import 'package:md_reader/reader/presentation/widgets/flowchart/flowchart_diagram.dart';
 import 'package:md_reader/reader/presentation/widgets/markdown_view.dart';
 
 /// Stand-in for [MarkdownRepository] with scripted behaviour, so tests stay
@@ -323,7 +324,8 @@ void main() {
       );
     }
 
-    testWidgets('renders a ```mermaid block as a diagram', (tester) async {
+    testWidgets('renders a flowchart with the in-house renderer',
+        (tester) async {
       await pumpView(tester, '''
 # Fluxo
 
@@ -336,9 +338,48 @@ graph TD
 ''');
       await tester.pump();
 
-      expect(find.byType(MermaidDiagram), findsOneWidget);
+      expect(find.byType(FlowchartDiagram), findsOneWidget);
+      expect(find.byType(MermaidDiagram), findsNothing);
       // The diagram replaces the raw source text.
       expect(find.textContaining('graph TD'), findsNothing);
+    });
+
+    testWidgets('renders flowcharts with subgraphs and subgraph edges',
+        (tester) async {
+      await pumpView(tester, '''
+```mermaid
+flowchart LR
+  CF["Cloudflare"] --> NG["NGINX"]
+  subgraph APP["Instância de aplicação"]
+    NG --> API["API<br/>2 workers"]
+  end
+  subgraph OBS["Logs"]
+    OS["OpenSearch"]
+  end
+  APP -.->|Fluent Bit| OS
+  API --> DB[("Postgres")]
+```
+''');
+      await tester.pump();
+
+      expect(find.byType(FlowchartDiagram), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('renders other diagram types with flutter_mermaid',
+        (tester) async {
+      await pumpView(tester, '''
+```mermaid
+pie
+  title Pets
+  "Dogs" : 386
+  "Cats" : 85
+```
+''');
+      await tester.pump();
+
+      expect(find.byType(MermaidDiagram), findsOneWidget);
+      expect(find.byType(FlowchartDiagram), findsNothing);
     });
 
     testWidgets('falls back to a code block for unsupported diagram types',
@@ -352,6 +393,7 @@ classDiagram
       await tester.pump();
 
       expect(find.byType(MermaidDiagram), findsNothing);
+      expect(find.byType(FlowchartDiagram), findsNothing);
       expect(find.textContaining('classDiagram'), findsOneWidget);
     });
 

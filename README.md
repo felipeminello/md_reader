@@ -15,6 +15,9 @@ go back to the empty state.
 - 🧜 Render ```` ```mermaid ```` fenced code blocks as native diagrams
   (flowchart, sequence, pie, gantt, timeline, kanban, radar and XY chart);
   unsupported or malformed diagrams fall back to a plain code block.
+  Flowcharts use an in-house renderer with a layered layout: subgraphs
+  (nested, and as edge endpoints), multi-line labels (`<br/>`), every node
+  shape and link style, orthogonal edges and pastel subgraph boxes.
 - 🖼️ Display images (`![alt](src)`): remote `http`/`https` URLs, inline
   `data:` URIs and local files — relative paths are resolved against the
   folder of the open `.md`. PNG, JPEG, GIF, WebP, BMP and SVG are supported;
@@ -40,11 +43,18 @@ md_reader/
 │           ├── reader_page.dart        # Main screen (BlocBuilder / BlocConsumer)
 │           └── widgets/
 │               ├── line_break_selection_container.dart # Keeps line breaks when copying a selection
+│               ├── flowchart/              # In-house Mermaid flowchart renderer
+│               │   ├── flowchart.dart          # Model: nodes, edges, subgraphs, styles
+│               │   ├── flowchart_parser.dart   # `flowchart`/`graph` syntax -> Flowchart
+│               │   ├── flowchart_layout.dart   # Layered layout: ranks, subgraph blocks, orthogonal routing
+│               │   ├── flowchart_painter.dart  # CustomPainter, text styles and light/dark palette
+│               │   └── flowchart_diagram.dart  # Widget: measures text, caches the layout, paints
 │               ├── markdown_image.dart     # Renders Markdown images (network, data URI, local file, SVG)
-               ├── markdown_view.dart      # Renders a loaded document
+│               ├── markdown_view.dart      # Renders a loaded document
 │               ├── mermaid_element_builder.dart # Renders ```mermaid blocks as diagrams
 │               └── reader_empty_view.dart  # Empty-state placeholder, open button + drag-and-drop target
 ├── test/
+│   ├── flowchart_test.dart             # Flowchart parser + layout tests
 │   └── widget_test.dart                # ReaderBloc + ReaderPage tests
 ├── windows/                            # Windows desktop runner
 │   ├── flutter/                        # Flutter build glue (generated registrant, CMake)
@@ -124,7 +134,7 @@ Key dependencies: [`flutter_bloc`](https://pub.dev/packages/flutter_bloc),
 target),
 [`flutter_markdown`](https://pub.dev/packages/flutter_markdown),
 [`flutter_mermaid`](https://pub.dev/packages/flutter_mermaid) (pure-Dart Mermaid
-rendering, no WebView),
+rendering, no WebView; used for every diagram type except flowcharts),
 [`flutter_svg`](https://pub.dev/packages/flutter_svg) (SVG images).
 
 ## Getting Started
