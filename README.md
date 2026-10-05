@@ -77,14 +77,14 @@ md_reader/
 │   │   └── Release.entitlements        # App Sandbox + user-selected file read + outgoing network
 │   ├── RunnerTests/RunnerTests.swift
 │   ├── Runner.xcodeproj/
-│   ├── Runner.xcworkspace/
-│   └── ExportOptions.plist             # `xcodebuild -exportArchive` config for App Store uploads
+│   └── Runner.xcworkspace/
 ├── installer/                          # MSI packaging (WiX v3 toolset)
 │   ├── md_reader.wxs                   # WiX authoring: product, shortcut, upgrade rules
 │   ├── build_msi.ps1                   # Build script: flutter build -> heat -> candle -> light
 │   └── AppFiles.wxs                    # Payload harvested by heat (generated)
 ├── dist/                               # Output MSI (generated): md_reader-<version>-x64.msi
 ├── tool/                               # Dev scripts
+│   ├── appstore.sh                     # Builds the macOS .pkg and uploads it to App Store Connect (TestFlight / App Store)
 │   ├── generate_app_icons.py           # Renders the Windows .ico and macOS AppIcon PNGs (Pillow + NumPy)
 │   └── package_portable.ps1            # Packs the Windows release into a single self-extracting .exe
 ├── tools/                              # Local WiX v3 binaries (downloaded; not source)
