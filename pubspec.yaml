@@ -42,8 +42,7 @@ dependencies:
   markdown: ^7.3.1
   desktop_drop: ^0.8.4
   flutter_svg: ^2.3.0
-  mermaid_flowchart:
-    path: ../mermaid_flowchart
+  mermaid_flowchart: ^0.1.1
 
 dev_dependencies:
   flutter_test:

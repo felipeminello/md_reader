@@ -291,9 +291,10 @@ packages:
   mermaid_flowchart:
     dependency: "direct main"
     description:
-      path: "../mermaid_flowchart"
-      relative: true
-    source: path
+      name: mermaid_flowchart
+      sha256: "9579ca7149aa25867de0cc46dc401de8e6dc53a7c9b0a77adda66ba25ba8a406"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.1.1"
   meta:
     dependency: transitive
