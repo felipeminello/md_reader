@@ -13,13 +13,20 @@ import 'package:flutter/services.dart';
 /// On platforms without the native counterpart (Windows, tests) every call is a
 /// no-op.
 class SystemFileOpener {
-  SystemFileOpener({MethodChannel channel = const MethodChannel(channelName)})
-      : _channel = channel;
+  SystemFileOpener({
+    MethodChannel channel = const MethodChannel(channelName),
+    List<String> launchArguments = const [],
+  })  : _channel = channel,
+        _launchArguments = launchArguments;
 
   /// Shared with `AppDelegate.fileOpenChannelName` on the macOS side.
   static const channelName = 'md_reader/system_file_open';
 
   final MethodChannel _channel;
+
+  /// Command-line arguments of the process. On Windows, *Abrir com* and a
+  /// double-click start the executable with the file path as an argument.
+  final List<String> _launchArguments;
   final _files = StreamController<String>.broadcast();
 
   /// Files the OS asks the app to open while it is already running.
@@ -37,10 +44,19 @@ class SystemFileOpener {
     });
 
     try {
-      return await _channel.invokeMethod<String>('getInitialFile');
+      final initial = await _channel.invokeMethod<String>('getInitialFile');
+      return initial ?? _fileFromArguments();
     } on MissingPluginException {
-      // No native side on this platform: nothing was opened from the OS.
-      return null;
+      // No native side on this platform: fall back to the command line.
+      return _fileFromArguments();
     }
+  }
+
+  String? _fileFromArguments() {
+    for (final arg in _launchArguments) {
+      final lower = arg.toLowerCase();
+      if (lower.endsWith('.md') || lower.endsWith('.markdown')) return arg;
+    }
+    return null;
   }
 }

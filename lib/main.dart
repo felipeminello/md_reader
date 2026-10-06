@@ -6,12 +6,15 @@ import 'reader/data/markdown_repository.dart';
 import 'reader/data/system_file_opener.dart';
 import 'reader/presentation/reader_page.dart';
 
-void main() {
-  runApp(const MyApp());
+void main(List<String> args) {
+  runApp(MyApp(launchArguments: args));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, this.launchArguments = const []});
+
+  /// Command-line arguments; on Windows they carry the file to open.
+  final List<String> launchArguments;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +33,8 @@ class MyApp extends StatelessWidget {
           // into the Bloc, alongside the picker and drag-and-drop.
           create: (context) => ReaderBloc(
             context.read<MarkdownRepository>(),
-            systemFileOpener: SystemFileOpener(),
+            systemFileOpener:
+                SystemFileOpener(launchArguments: launchArguments),
           ),
           child: const ReaderPage(),
         ),
