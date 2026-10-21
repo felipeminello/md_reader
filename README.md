@@ -194,3 +194,34 @@ Install it by double-clicking the MSI: it requests admin rights, installs to
 **not code-signed**, so Windows SmartScreen may show a warning on first run
 (choose *More info → Run anyway*). To uninstall, use *Apps & features* or
 *Add/Remove Programs*.
+
+## GitHub releases
+
+Pushing a `v*.*.*` tag runs [.github/workflows/release.yml](.github/workflows/release.yml),
+which builds both platforms and attaches `md-reader-macos.zip` and
+`md-reader-windows.zip` to a GitHub Release.
+
+The macOS app is re-signed with the **Developer ID Application** certificate
+(Hardened Runtime), notarized with `notarytool` and stapled, so Gatekeeper opens
+it after download without the *"Apple could not verify…"* warning. The job needs
+these repository secrets (*Settings → Secrets and variables → Actions*):
+
+| Secret | Value |
+| --- | --- |
+| `MACOS_CERTIFICATE_P12` | Base64 of the Developer ID Application certificate + private key exported as `.p12` |
+| `MACOS_CERTIFICATE_PASSWORD` | Password chosen when exporting the `.p12` |
+| `APPLE_API_KEY_P8` | Contents of the App Store Connect API key (`AuthKey_<ID>.p8`) |
+| `APPLE_API_KEY_ID` | That key's ID |
+| `APPLE_API_ISSUER_ID` | The Issuer ID shown on the App Store Connect API keys page |
+
+Export the certificate from *Keychain Access → My Certificates → Developer ID
+Application: … → Export*, then load the secrets with the GitHub CLI:
+
+```bash
+base64 -i devid.p12 | gh secret set MACOS_CERTIFICATE_P12
+gh secret set MACOS_CERTIFICATE_PASSWORD
+gh secret set APPLE_API_KEY_P8 < ~/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8
+gh secret set APPLE_API_KEY_ID --body "$ASC_KEY_ID"
+gh secret set APPLE_API_ISSUER_ID --body "$ASC_ISSUER_ID"
+rm devid.p12
+```
