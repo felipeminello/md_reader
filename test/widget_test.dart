@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_mermaid/flutter_mermaid.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mermaid_erdiagram/mermaid_erdiagram.dart' show MermaidErDiagram;
 import 'package:mermaid_flowchart/mermaid_flowchart.dart' show MermaidFlowchart;
 
 import 'package:md_reader/main.dart';
@@ -365,6 +366,27 @@ flowchart LR
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('renders an ER diagram with mermaid_erdiagram', (tester) async {
+      await pumpView(tester, '''
+```mermaid
+erDiagram
+  CUSTOMER ||--o{ ORDER : places
+  ORDER ||--|{ LINE-ITEM : contains
+  CUSTOMER {
+    string name
+    string custNumber PK
+  }
+```
+''');
+      await tester.pump();
+
+      expect(find.byType(MermaidErDiagram), findsOneWidget);
+      expect(find.byType(MermaidDiagram), findsNothing);
+      expect(find.byType(MermaidFlowchart), findsNothing);
+      expect(find.textContaining('erDiagram'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('renders other diagram types with flutter_mermaid',
         (tester) async {
       await pumpView(tester, '''
@@ -393,6 +415,7 @@ classDiagram
 
       expect(find.byType(MermaidDiagram), findsNothing);
       expect(find.byType(MermaidFlowchart), findsNothing);
+      expect(find.byType(MermaidErDiagram), findsNothing);
       expect(find.textContaining('classDiagram'), findsOneWidget);
     });
 

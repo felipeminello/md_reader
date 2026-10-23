@@ -43,6 +43,7 @@ dependencies:
   desktop_drop: ^0.8.4
   flutter_svg: ^2.3.0
   mermaid_flowchart: ^0.1.1
+  mermaid_erdiagram: ^0.1.0
 
 dev_dependencies:
   flutter_test:

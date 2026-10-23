@@ -288,6 +288,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.13.0"
+  mermaid_erdiagram:
+    dependency: "direct main"
+    description:
+      name: mermaid_erdiagram
+      sha256: "0609ca0963158fac6a69d0ea0b5e98603046052fd7bca6ec51443cc347e6b152"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
   mermaid_flowchart:
     dependency: "direct main"
     description:

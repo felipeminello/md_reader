@@ -13,12 +13,17 @@ go back to the empty state.
   or already running.
 - 📖 Read and render the file as formatted, selectable, scrollable text.
 - 🧜 Render ```` ```mermaid ```` fenced code blocks as native diagrams
-  (flowchart, sequence, pie, gantt, timeline, kanban, radar and XY chart);
+  (flowchart, ER diagram, sequence, pie, gantt, timeline, kanban, radar and XY chart);
   unsupported or malformed diagrams fall back to a plain code block.
   Flowcharts are drawn by [`mermaid_flowchart`](https://github.com/felipeminello/mermaid_flowchart), a
   sibling package with a layered layout: subgraphs (nested, and as edge
   endpoints), multi-line labels (`<br/>`), every node shape and link style,
   orthogonal edges and pastel subgraph boxes.
+  Entity relationship diagrams (`erDiagram`) are drawn by
+  [`mermaid_erdiagram`](https://pub.dev/packages/mermaid_erdiagram):
+  attribute tables with `PK`/`FK`/`UK` keys and comments, crow's foot
+  cardinality markers, identifying/non-identifying relationships, subgraphs
+  and styling.
 - 🖼️ Display images (`![alt](src)`): remote `http`/`https` URLs, inline
   `data:` URIs and local files — relative paths are resolved against the
   folder of the open `.md`. PNG, JPEG, GIF, WebP, BMP and SVG are supported;
@@ -128,9 +133,11 @@ Key dependencies: [`flutter_bloc`](https://pub.dev/packages/flutter_bloc),
 target),
 [`flutter_markdown`](https://pub.dev/packages/flutter_markdown),
 [`flutter_mermaid`](https://pub.dev/packages/flutter_mermaid) (pure-Dart Mermaid
-rendering, no WebView; used for every diagram type except flowcharts),
+rendering, no WebView; used for every diagram type except flowcharts and ER
+diagrams),
 [`mermaid_flowchart`](https://github.com/felipeminello/mermaid_flowchart) (flowcharts; path dependency on
 the sibling folder until it is published on pub.dev),
+[`mermaid_erdiagram`](https://pub.dev/packages/mermaid_erdiagram) (ER diagrams),
 [`flutter_svg`](https://pub.dev/packages/flutter_svg) (SVG images).
 
 ## Getting Started

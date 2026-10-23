@@ -3,6 +3,8 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_mermaid/flutter_mermaid.dart'
     show MermaidDiagram, MermaidParser;
 import 'package:markdown/markdown.dart' as md;
+import 'package:mermaid_erdiagram/mermaid_erdiagram.dart'
+    show ErDiagramParser, MermaidErDiagram;
 import 'package:mermaid_flowchart/mermaid_flowchart.dart'
     show FlowchartParser, MermaidFlowchart;
 
@@ -14,7 +16,8 @@ import 'package:mermaid_flowchart/mermaid_flowchart.dart'
 ///
 /// Flowcharts (`flowchart` / `graph`) are drawn by the mermaid_flowchart
 /// package, which handles subgraphs, multi-line labels and orthogonal edges;
-/// the other diagram types are drawn by flutter_mermaid.
+/// entity relationship diagrams (`erDiagram`) by the mermaid_erdiagram
+/// package; the other diagram types are drawn by flutter_mermaid.
 class MermaidElementBuilder extends MarkdownElementBuilder {
   @override
   Widget? visitElementAfterWithContext(
@@ -30,6 +33,12 @@ class MermaidElementBuilder extends MarkdownElementBuilder {
       final chart = const FlowchartParser().parse(code);
       if (chart == null) return null;
       return _fitted(MermaidFlowchart.chart(chart: chart));
+    }
+
+    if (ErDiagramParser.isErDiagram(code)) {
+      final diagram = const ErDiagramParser().parse(code);
+      if (diagram == null || diagram.entities.isEmpty) return null;
+      return _fitted(MermaidErDiagram.diagram(diagram: diagram));
     }
 
     if (!_canRender(code)) return null;
@@ -50,7 +59,8 @@ class MermaidElementBuilder extends MarkdownElementBuilder {
       );
 
   /// flutter_mermaid covers only part of the Mermaid grammar (sequence, pie,
-  /// gantt, timeline, kanban, radar and XY chart besides flowcharts). Probe
+  /// gantt, timeline, kanban, radar and XY chart besides flowcharts and ER
+  /// diagrams). Probe
   /// its parser first so unsupported or malformed diagrams degrade to the
   /// regular code block instead of an error box.
   bool _canRender(String code) {
