@@ -28,6 +28,11 @@ go back to the empty state.
   `data:` URIs and local files — relative paths are resolved against the
   folder of the open `.md`. PNG, JPEG, GIF, WebP, BMP and SVG are supported;
   an image that fails to load shows its alt text instead.
+- 🔍 **Localizar** (find in document): the magnifier button or **⌘F**
+  (macOS) / **Ctrl+F** (Windows) opens a find bar over the document. Typing
+  searches as you go (ignoring case and accents), jumps to the first match,
+  highlights every occurrence and shows the count ("2 de 7"). Enter / the ↓
+  button go to the next match, Shift+Enter / ↑ to the previous one, Esc closes.
 - ✖️ Close the open document to return to the empty state.
 
 ## Project Structure
@@ -40,21 +45,28 @@ md_reader/
 │       ├── data/
 │       │   ├── markdown_document.dart  # MarkdownDocument model
 │       │   ├── markdown_repository.dart# Data source: pick + read files
-│       │   └── system_file_opener.dart # Files handed over by the OS (macOS "Abrir com")
+│       │   ├── system_file_opener.dart # Files handed over by the OS (macOS "Abrir com")
+│       │   └── text_search.dart        # TextMatch + case/accent-insensitive search
 │       ├── bloc/
+│       │   ├── find_bloc.dart          # FindBloc ("Localizar": query, matches, current match)
+│       │   ├── find_event.dart         # Events: open / close / query / next / previous / content
+│       │   ├── find_state.dart         # FindState
 │       │   ├── reader_bloc.dart        # ReaderBloc (business logic)
 │       │   ├── reader_event.dart       # Events: open / close / drop / opened by the OS
 │       │   └── reader_state.dart       # States: empty / loading / loaded / failure
 │       └── presentation/
 │           ├── reader_page.dart        # Main screen (BlocBuilder / BlocConsumer)
 │           └── widgets/
+│               ├── find_bar.dart           # Floating "Localizar" bar (field, counter, ↑/↓, close)
+│               ├── find_highlighter.dart   # Indexes the rendered text, highlights and scrolls to matches
+│               ├── find_shortcuts.dart     # Cmd+F / Ctrl+F shortcut
 │               ├── line_break_selection_container.dart # Keeps line breaks when copying a selection
 │               ├── markdown_image.dart     # Renders Markdown images (network, data URI, local file, SVG)
 │               ├── markdown_view.dart      # Renders a loaded document
 │               ├── mermaid_element_builder.dart # Renders ```mermaid blocks as diagrams
 │               └── reader_empty_view.dart  # Empty-state placeholder, open button + drag-and-drop target
 ├── test/
-│   └── widget_test.dart                # ReaderBloc + ReaderPage tests
+│   └── widget_test.dart                # ReaderBloc, FindBloc, TextSearch + widget tests
 ├── windows/                            # Windows desktop runner
 │   ├── flutter/                        # Flutter build glue (generated registrant, CMake)
 │   ├── runner/                         # Native C++ runner
@@ -108,6 +120,16 @@ md_reader/
 State is managed with the **BLoC pattern** (`flutter_bloc`). Widgets only dispatch
 events and render state; the `ReaderBloc` mediates between the UI and the
 `MarkdownRepository`. Layering: `presentation` → `bloc` → `data`.
+
+### Find in document (*Localizar*)
+
+`FindBloc` owns the search: query, matches and the current match. It searches
+the text **as rendered**, not the Markdown source: `FindHighlighter` (inside
+the document's scroll view) collects every `RenderParagraph` after layout and
+reports their plain text with `FindContentChanged`, so match offsets map
+directly onto glyphs. It then paints the highlights over the text and scrolls
+the current match into view with `showOnScreen`. Text drawn by Mermaid
+diagrams is painted on a canvas and is not searchable.
 
 ### Opening files from Finder (macOS)
 

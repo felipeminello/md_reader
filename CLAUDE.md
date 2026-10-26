@@ -23,7 +23,7 @@ This project **must follow the BLoC (Business Logic Component) pattern** for sta
 - Each feature has a Bloc (or Cubit) with explicit **State** classes and, for Blocs, explicit **Event** classes.
 - Use the `flutter_bloc` package (`BlocProvider`, `BlocBuilder`, `BlocListener`, `context.read`/`context.watch`). Add it with `flutter pub add flutter_bloc` — it is not yet a dependency.
 - Suggested layering: `presentation` (widgets) → `bloc` (blocs/cubits, events, states) → `domain`/`data` (repositories, models). Widgets never call repositories directly; the Bloc mediates.
-- The reader feature lives under [lib/reader/](lib/reader/), split into `presentation/` (`ReaderPage` + view widgets), `bloc/` (`ReaderBloc` with `ReaderEvent`/`ReaderState`), and `data/` (`MarkdownRepository`, `MarkdownDocument`). [lib/main.dart](lib/main.dart) wires them together with `RepositoryProvider` + `BlocProvider`. New features should follow the same layering.
+- The reader feature lives under [lib/reader/](lib/reader/), split into `presentation/` (`ReaderPage` + view widgets), `bloc/` (`ReaderBloc` with `ReaderEvent`/`ReaderState`), and `data/` (`MarkdownRepository`, `MarkdownDocument`). [lib/main.dart](lib/main.dart) wires them together with `RepositoryProvider` + `MultiBlocProvider`. *Localizar* (find in document) is a second Bloc in the same feature, `FindBloc` (`bloc/find_*.dart`), fed by `FindHighlighter` (presentation), which indexes the rendered `RenderParagraph`s and paints/scrolls to matches; the pure search is `TextSearch` (`data/text_search.dart`). Widget tests that pump `MarkdownView` or `ReaderPage` must provide a `FindBloc`. New features should follow the same layering.
 
 ## Commands
 

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../bloc/find_bloc.dart';
+import '../bloc/find_event.dart';
+import '../bloc/find_state.dart';
 import '../bloc/reader_bloc.dart';
 import '../bloc/reader_event.dart';
 import '../bloc/reader_state.dart';
+import 'widgets/find_bar.dart';
+import 'widgets/find_shortcuts.dart';
 import 'widgets/markdown_view.dart';
 import 'widgets/reader_empty_view.dart';
 
@@ -17,91 +22,120 @@ class ReaderPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: BlocBuilder<ReaderBloc, ReaderState>(
-          builder: (context, state) {
-            if (state is! ReaderLoaded) {
-              return const Text('Leitor de Markdown');
-            }
-            final document = state.document;
-            final folder = _parentFolder(document.path);
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  document.fileName,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (folder != null)
+    return FindShortcuts(
+      child: Scaffold(
+        appBar: AppBar(
+          title: BlocBuilder<ReaderBloc, ReaderState>(
+            builder: (context, state) {
+              if (state is! ReaderLoaded) {
+                return const Text('Leitor de Markdown');
+              }
+              final document = state.document;
+              final folder = _parentFolder(document.path);
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    folder,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    document.fileName,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-              ],
-            );
-          },
-        ),
-        actions: [
-          BlocBuilder<ReaderBloc, ReaderState>(
-            builder: (context, state) {
-              if (state is! ReaderLoaded) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Row(
-                  children: [
-                    IconButton.filledTonal(
-                      icon: const Icon(Icons.folder_open_outlined),
-                      tooltip: 'Abrir outro arquivo',
-                      onPressed: () => context
-                          .read<ReaderBloc>()
-                          .add(const ReaderFileOpened()),
+                  if (folder != null)
+                    Text(
+                      folder,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      tooltip: 'Fechar arquivo',
-                      onPressed: () => context
-                          .read<ReaderBloc>()
-                          .add(const ReaderFileClosed()),
-                    ),
-                  ],
-                ),
+                ],
               );
             },
           ),
-        ],
-      ),
-      body: BlocConsumer<ReaderBloc, ReaderState>(
-        listener: (context, state) {
-          if (state is ReaderFailure) {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+          actions: [
+            BlocBuilder<ReaderBloc, ReaderState>(
+              builder: (context, state) {
+                if (state is! ReaderLoaded) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.search),
+                        tooltip: 'Localizar (${FindShortcuts.label})',
+                        onPressed: () =>
+                            context.read<FindBloc>().add(const FindOpened()),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filledTonal(
+                        icon: const Icon(Icons.folder_open_outlined),
+                        tooltip: 'Abrir outro arquivo',
+                        onPressed: () => context
+                            .read<ReaderBloc>()
+                            .add(const ReaderFileOpened()),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        tooltip: 'Fechar arquivo',
+                        onPressed: () => context
+                            .read<ReaderBloc>()
+                            .add(const ReaderFileClosed()),
+                      ),
+                    ],
                   ),
-                  content: Text(state.message),
+                );
+              },
+            ),
+          ],
+        ),
+        body: BlocConsumer<ReaderBloc, ReaderState>(
+          listener: (context, state) {
+            // Find only makes sense over an open document.
+            if (state is! ReaderLoaded) {
+              context.read<FindBloc>().add(const FindClosed());
+            }
+            if (state is ReaderFailure) {
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    content: Text(state.message),
+                  ),
+                );
+            }
+          },
+          builder: (context, state) {
+            return switch (state) {
+              ReaderLoading() => const _LoadingView(),
+              ReaderLoaded(:final document) => Stack(
+                  children: [
+                    MarkdownView(document: document),
+                    BlocBuilder<FindBloc, FindState>(
+                      buildWhen: (previous, current) =>
+                          previous.isOpen != current.isOpen,
+                      builder: (context, find) {
+                        if (!find.isOpen) return const SizedBox.shrink();
+                        return const Positioned(
+                          top: 12,
+                          right: 24,
+                          child: FindBar(),
+                        );
+                      },
+                    ),
+                  ],
                 ),
-              );
-          }
-        },
-        builder: (context, state) {
-          return switch (state) {
-            ReaderLoading() => const _LoadingView(),
-            ReaderLoaded(:final document) => MarkdownView(document: document),
-            ReaderEmpty() || ReaderFailure() => const ReaderEmptyView(),
-          };
-        },
+              ReaderEmpty() || ReaderFailure() => const ReaderEmptyView(),
+            };
+          },
+        ),
       ),
     );
   }

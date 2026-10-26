@@ -14,13 +14,18 @@ import 'package:mermaid_erdiagram/mermaid_erdiagram.dart' show MermaidErDiagram;
 import 'package:mermaid_flowchart/mermaid_flowchart.dart' show MermaidFlowchart;
 
 import 'package:md_reader/main.dart';
+import 'package:md_reader/reader/bloc/find_bloc.dart';
+import 'package:md_reader/reader/bloc/find_event.dart';
+import 'package:md_reader/reader/bloc/find_state.dart';
 import 'package:md_reader/reader/bloc/reader_bloc.dart';
 import 'package:md_reader/reader/bloc/reader_event.dart';
 import 'package:md_reader/reader/bloc/reader_state.dart';
 import 'package:md_reader/reader/data/markdown_document.dart';
 import 'package:md_reader/reader/data/markdown_repository.dart';
 import 'package:md_reader/reader/data/system_file_opener.dart';
+import 'package:md_reader/reader/data/text_search.dart';
 import 'package:md_reader/reader/presentation/reader_page.dart';
+import 'package:md_reader/reader/presentation/widgets/find_bar.dart';
 import 'package:md_reader/reader/presentation/widgets/markdown_view.dart';
 
 /// Stand-in for [MarkdownRepository] with scripted behaviour, so tests stay
@@ -84,6 +89,16 @@ class _FakeOpenChannel {
 SystemFileOpener _fakeOpener({required String? initialFile}) {
   final fake = _FakeOpenChannel(initialFile: initialFile)..install();
   return SystemFileOpener(channel: fake.channel);
+}
+
+/// [view] inside an app with the [FindBloc] that [MarkdownView] searches with.
+Widget _viewApp(Widget view, {FindBloc? findBloc}) {
+  return MaterialApp(
+    home: BlocProvider(
+      create: (_) => findBloc ?? FindBloc(),
+      child: Scaffold(body: view),
+    ),
+  );
 }
 
 void main() {
@@ -288,7 +303,13 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider.value(value: bloc, child: const ReaderPage()),
+          home: MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: bloc),
+              BlocProvider(create: (_) => FindBloc()),
+            ],
+            child: const ReaderPage(),
+          ),
         ),
       );
 
@@ -314,12 +335,10 @@ void main() {
   group('MarkdownView – Mermaid', () {
     Future<void> pumpView(WidgetTester tester, String content) {
       return tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: MarkdownView(
-              document:
-                  MarkdownDocument(path: r'C:\docs\doc.md', content: content),
-            ),
+        _viewApp(
+          MarkdownView(
+            document:
+                MarkdownDocument(path: r'C:\docs\doc.md', content: content),
           ),
         ),
       );
@@ -471,13 +490,11 @@ void main() {}
     testWidgets('loads relative images from the document folder',
         (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: MarkdownView(
-              document: MarkdownDocument(
-                path: r'C:\docs\doc.md',
-                content: '![Diagrama](img/diagrama.png)',
-              ),
+        _viewApp(
+          const MarkdownView(
+            document: MarkdownDocument(
+              path: r'C:\docs\doc.md',
+              content: '![Diagrama](img/diagrama.png)',
             ),
           ),
         ),
@@ -495,13 +512,11 @@ void main() {}
     testWidgets('shows the alt text when an image cannot be loaded',
         (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: MarkdownView(
-              document: MarkdownDocument(
-                path: r'C:\docs\doc.md',
-                content: '![Logo ausente](ftp://example.com/logo.png)',
-              ),
+        _viewApp(
+          const MarkdownView(
+            document: MarkdownDocument(
+              path: r'C:\docs\doc.md',
+              content: '![Logo ausente](ftp://example.com/logo.png)',
             ),
           ),
         ),
@@ -531,18 +546,16 @@ void main() {}
       );
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: MarkdownView(
-              document: MarkdownDocument(
-                path: r'C:\docs\doc.md',
-                content: '# Título\n\n'
-                    'Primeiro parágrafo.\n\n'
-                    'Segundo parágrafo.\n\n'
-                    '- item a\n'
-                    '- item b\n\n'
-                    '```\nlinha 1\nlinha 2\n```\n',
-              ),
+        _viewApp(
+          const MarkdownView(
+            document: MarkdownDocument(
+              path: r'C:\docs\doc.md',
+              content: '# Título\n\n'
+                  'Primeiro parágrafo.\n\n'
+                  'Segundo parágrafo.\n\n'
+                  '- item a\n'
+                  '- item b\n\n'
+                  '```\nlinha 1\nlinha 2\n```\n',
             ),
           ),
         ),
@@ -566,6 +579,248 @@ void main() {}
         '•\titem b\n'
         'linha 1\nlinha 2',
       );
+    });
+  });
+  group('TextSearch', () {
+    test('ignores case and accents', () {
+      expect(
+        TextSearch.findAll(['Ação e ACAO', 'sem nada'], 'acao'),
+        const [
+          TextMatch(segment: 0, start: 0, end: 4),
+          TextMatch(segment: 0, start: 7, end: 11),
+        ],
+      );
+    });
+
+    test('finds non-overlapping matches across segments in order', () {
+      expect(
+        TextSearch.findAll(['aaaa', 'xa'], 'aa'),
+        const [
+          TextMatch(segment: 0, start: 0, end: 2),
+          TextMatch(segment: 0, start: 2, end: 4),
+        ],
+      );
+      expect(TextSearch.findAll(['abc', 'cab'], 'ab').map((m) => m.segment),
+          [0, 1]);
+    });
+
+    test('an empty query matches nothing', () {
+      expect(TextSearch.findAll(['abc'], ''), isEmpty);
+    });
+  });
+
+  group('FindBloc', () {
+    Future<FindBloc> openWith(List<String> segments) async {
+      final bloc = FindBloc()
+        ..add(FindContentChanged(segments))
+        ..add(const FindOpened());
+      await bloc.stream.firstWhere((state) => state.isOpen);
+      return bloc;
+    }
+
+    test('starts closed', () {
+      expect(FindBloc().state.isOpen, isFalse);
+    });
+
+    test('goes to the first match when the query changes', () async {
+      final bloc = await openWith(['um dois um', 'um']);
+      addTearDown(bloc.close);
+
+      bloc.add(const FindQueryChanged('um'));
+      final state = await bloc.stream.first;
+
+      expect(state.matchCount, 3);
+      expect(state.currentIndex, 0);
+      expect(state.currentMatch, const TextMatch(segment: 0, start: 0, end: 2));
+    });
+
+    test('next and previous wrap around', () async {
+      final bloc = await openWith(['x x x']);
+      addTearDown(bloc.close);
+      bloc.add(const FindQueryChanged('x'));
+      await bloc.stream.first;
+
+      bloc.add(const FindPreviousRequested());
+      expect((await bloc.stream.first).currentIndex, 2);
+      bloc.add(const FindNextRequested());
+      expect((await bloc.stream.first).currentIndex, 0);
+      bloc.add(const FindNextRequested());
+      expect((await bloc.stream.first).currentIndex, 1);
+    });
+
+    test('"next" with a single match still asks to reveal it', () async {
+      final bloc = await openWith(['único']);
+      addTearDown(bloc.close);
+      bloc.add(const FindQueryChanged('único'));
+      final before = await bloc.stream.first;
+
+      bloc.add(const FindNextRequested());
+      final after = await bloc.stream.first;
+
+      expect(after.currentIndex, 0);
+      expect(after.revealRequests, before.revealRequests + 1);
+    });
+
+    test('closing clears the matches but keeps the query for next time',
+        () async {
+      final bloc = await openWith(['abc abc']);
+      addTearDown(bloc.close);
+      bloc.add(const FindQueryChanged('abc'));
+      await bloc.stream.first;
+
+      bloc.add(const FindClosed());
+      final closed = await bloc.stream.first;
+      expect(closed.isOpen, isFalse);
+      expect(closed.matches, isEmpty);
+      expect(closed.query, 'abc');
+
+      bloc.add(const FindOpened());
+      final reopened = await bloc.stream.first;
+      expect(reopened.matchCount, 2);
+      expect(reopened.currentIndex, 0);
+    });
+
+    test('searches again when the document content changes', () async {
+      final bloc = await openWith(['abc']);
+      addTearDown(bloc.close);
+      bloc.add(const FindQueryChanged('abc'));
+      await bloc.stream.first;
+
+      bloc.add(const FindContentChanged(['abc', 'abc', 'abc']));
+      expect((await bloc.stream.first).matchCount, 3);
+    });
+  });
+
+  group('ReaderPage – find', () {
+    Future<(ReaderBloc, FindBloc)> pumpLoaded(
+      WidgetTester tester,
+      String content,
+    ) async {
+      final readerBloc = ReaderBloc(
+        _FakeRepository(
+          pickResult: r'C:\docs\guia.md',
+          document:
+              MarkdownDocument(path: r'C:\docs\guia.md', content: content),
+        ),
+      );
+      final findBloc = FindBloc();
+      addTearDown(readerBloc.close);
+      addTearDown(findBloc.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: readerBloc),
+              BlocProvider.value(value: findBloc),
+            ],
+            child: const ReaderPage(),
+          ),
+        ),
+      );
+      readerBloc.add(const ReaderFileOpened());
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(); // Loaded
+      await tester.pump(); // post-frame indexing reaches the FindBloc
+      return (readerBloc, findBloc);
+    }
+
+    testWidgets('the magnifier opens the bar and counts the results',
+        (tester) async {
+      await pumpLoaded(
+        tester,
+        '# Guia\n\nUm exemplo. Outro Exemplo.\n\n- mais um exemplo',
+      );
+
+      expect(find.byType(FindBar), findsNothing);
+      await tester.tap(find.byTooltip('Localizar (Ctrl+F)'));
+      await tester.pump();
+      expect(find.byType(FindBar), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'exemplo');
+      await tester.pump();
+      expect(find.text('1 de 3'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Próximo resultado (Enter)'));
+      await tester.pump();
+      expect(find.text('2 de 3'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Resultado anterior (Shift+Enter)'));
+      await tester.tap(find.byTooltip('Resultado anterior (Shift+Enter)'));
+      await tester.pump();
+      expect(find.text('3 de 3'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'inexistente');
+      await tester.pump();
+      expect(find.text('Nenhum resultado'), findsOneWidget);
+    });
+
+    testWidgets('Ctrl+F opens the bar, Enter steps and Esc closes it',
+        (tester) async {
+      await pumpLoaded(tester, 'abc abc abc');
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyF);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+      expect(find.byType(FindBar), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'abc');
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      expect(find.text('2 de 3'), findsOneWidget);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.pump();
+      expect(find.text('1 de 3'), findsOneWidget);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      expect(find.byType(FindBar), findsNothing);
+    });
+
+    testWidgets('scrolls to the first match', (tester) async {
+      final filler = List.generate(80, (i) => 'Parágrafo $i.').join('\n\n');
+      await pumpLoaded(tester, '$filler\n\nO tesouro está aqui.');
+
+      final scrollable = tester.state<ScrollableState>(
+        find
+            .descendant(
+              of: find.byType(MarkdownView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(scrollable.position.pixels, 0);
+
+      await tester.tap(find.byTooltip('Localizar (Ctrl+F)'));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), 'tesouro');
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 de 1'), findsOneWidget);
+      expect(scrollable.position.pixels, greaterThan(0));
+      final match = tester.getRect(find.textContaining('O tesouro'));
+      final viewport = tester.getRect(find.byType(MarkdownView));
+      expect(viewport.contains(match.center), isTrue);
+    });
+
+    testWidgets('closing the document closes the bar', (tester) async {
+      final (_, findBloc) = await pumpLoaded(tester, 'texto');
+      await tester.tap(find.byTooltip('Localizar (Ctrl+F)'));
+      await tester.pump();
+      expect(find.byType(FindBar), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Fechar arquivo'));
+      await tester.pump();
+
+      expect(find.byType(FindBar), findsNothing);
+      expect(findBloc.state,
+          isA<FindState>().having((s) => s.isOpen, 'isOpen', false));
     });
   });
 }

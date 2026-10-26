@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'reader/bloc/find_bloc.dart';
 import 'reader/bloc/reader_bloc.dart';
 import 'reader/data/markdown_repository.dart';
 import 'reader/data/system_file_opener.dart';
@@ -28,14 +29,20 @@ class MyApp extends StatelessWidget {
       // Bloc, which is the only thing the UI talks to.
       home: RepositoryProvider(
         create: (_) => const MarkdownRepository(),
-        child: BlocProvider(
-          // The opener lets the OS (Finder's "Abrir com" on macOS) push files
-          // into the Bloc, alongside the picker and drag-and-drop.
-          create: (context) => ReaderBloc(
-            context.read<MarkdownRepository>(),
-            systemFileOpener:
-                SystemFileOpener(launchArguments: launchArguments),
-          ),
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              // The opener lets the OS (Finder's "Abrir com" on macOS) push
+              // files into the Bloc, alongside the picker and drag-and-drop.
+              create: (context) => ReaderBloc(
+                context.read<MarkdownRepository>(),
+                systemFileOpener:
+                    SystemFileOpener(launchArguments: launchArguments),
+              ),
+            ),
+            // Find in the open document (magnifier button, Cmd/Ctrl+F).
+            BlocProvider(create: (_) => FindBloc()),
+          ],
           child: const ReaderPage(),
         ),
       ),
